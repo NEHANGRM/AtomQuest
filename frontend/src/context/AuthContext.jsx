@@ -22,13 +22,20 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('userInfo', JSON.stringify(data));
   };
 
+  const registerUser = async (name, email, password, role = 'employee') => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const { data } = await axios.post(`${apiUrl}/api/auth/register`, { name, email, password, role });
+    setUser(data);
+    localStorage.setItem('userInfo', JSON.stringify(data));
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('userInfo');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, registerUser, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
