@@ -7,6 +7,7 @@ const goalSchema = mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
   uomType: { type: String, enum: ['Numeric', 'Percentage', 'Timeline', 'Zero-based'], required: true },
+  direction: { type: String, enum: ['Higher', 'Lower'], default: 'Higher' },
   target: { type: Number, required: true },
   weightage: { type: Number, required: true, min: 10, max: 100 },
   deadline: { type: Date, required: true },

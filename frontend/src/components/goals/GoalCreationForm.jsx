@@ -11,6 +11,7 @@ const goalSchema = z.object({
   title: z.string().min(5, "Title too short"),
   description: z.string().optional(),
   uomType: z.enum(['Numeric', 'Percentage', 'Timeline', 'Zero-based']),
+  direction: z.enum(['Higher', 'Lower']).optional(),
   target: z.number().min(1, "Must be > 0"),
   weightage: z.number().min(10, "Min 10%").max(100, "Max 100%"),
   timeline: z.string().min(2, "Required"),
@@ -37,7 +38,7 @@ const GoalCreationForm = ({ onComplete }) => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       year: new Date().getFullYear().toString(),
-      goals: [{ thrustArea: '', title: '', description: '', uomType: 'Numeric', target: 100, weightage: 10, timeline: 'Q4' }]
+      goals: [{ thrustArea: '', title: '', description: '', uomType: 'Numeric', direction: 'Higher', target: 100, weightage: 10, timeline: 'Q4' }]
     }
   });
 
@@ -109,7 +110,7 @@ const GoalCreationForm = ({ onComplete }) => {
                     <button 
                       type="button"
                       disabled={isAlreadyAdded}
-                      onClick={() => append({ thrustArea: sg.thrustArea, title: sg.title, description: sg.description, uomType: sg.uomType, target: sg.target, weightage: 10, timeline: sg.timeline, isShared: true, sharedGoalId: sg._id })}
+                      onClick={() => append({ thrustArea: sg.thrustArea, title: sg.title, description: sg.description, uomType: sg.uomType, direction: sg.direction, target: sg.target, weightage: 10, timeline: sg.timeline, isShared: true, sharedGoalId: sg._id })}
                       className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white text-xs font-medium rounded transition"
                     >
                       {isAlreadyAdded ? 'Added' : 'Add to Sheet'}
@@ -174,7 +175,17 @@ const GoalCreationForm = ({ onComplete }) => {
                   </select>
                 </div>
 
-                <div className="lg:col-span-1 grid grid-cols-2 gap-3">
+                {(watchGoals[index]?.uomType === 'Numeric' || watchGoals[index]?.uomType === 'Percentage') && (
+                  <div className="lg:col-span-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Optimization</label>
+                    <select disabled={watchGoals[index]?.isShared} {...register(`goals.${index}.direction`)} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}>
+                      <option value="Higher">Higher is Better</option>
+                      <option value="Lower">Lower is Better</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className={`lg:col-span-1 grid grid-cols-2 gap-3 ${(watchGoals[index]?.uomType === 'Numeric' || watchGoals[index]?.uomType === 'Percentage') ? 'col-span-1' : 'col-span-2'}`}>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Target</label>
                     <input type="number" readOnly={watchGoals[index]?.isShared} {...register(`goals.${index}.target`, { valueAsNumber: true })} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} />
@@ -202,7 +213,7 @@ const GoalCreationForm = ({ onComplete }) => {
             type="button" 
             onClick={() => {
               if (fields.length < 8) {
-                append({ thrustArea: '', title: '', description: '', uomType: 'Numeric', target: 100, weightage: 10, timeline: 'Q4' });
+                append({ thrustArea: '', title: '', description: '', uomType: 'Numeric', direction: 'Higher', target: 100, weightage: 10, timeline: 'Q4' });
               } else {
                 toast.error("Maximum 8 goals allowed");
               }

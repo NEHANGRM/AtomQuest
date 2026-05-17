@@ -5,10 +5,10 @@ const Goal = require('../models/Goal');
 // @route   POST /api/shared-goals
 // @access  Private (Manager/Admin)
 const createSharedGoal = async (req, res) => {
-  const { thrustArea, title, description, uomType, target, timeline, assignedTo } = req.body;
+  const { thrustArea, title, description, uomType, direction, target, timeline, assignedTo } = req.body;
   try {
     const sharedGoal = await SharedGoal.create({
-      createdBy: req.user._id, thrustArea, title, description, uomType, target, timeline, assignedTo
+      createdBy: req.user._id, thrustArea, title, description, uomType, direction, target, timeline, assignedTo
     });
     res.status(201).json(sharedGoal);
   } catch (error) {
@@ -44,7 +44,7 @@ const getEmployeeAssignedSharedGoals = async (req, res) => {
 // @route   PUT /api/shared-goals/:id
 // @access  Private (Manager/Admin)
 const updateSharedGoal = async (req, res) => {
-  const { thrustArea, title, description, uomType, target, timeline, assignedTo } = req.body;
+  const { thrustArea, title, description, uomType, direction, target, timeline, assignedTo } = req.body;
   try {
     const sharedGoal = await SharedGoal.findById(req.params.id);
     if (!sharedGoal) return res.status(404).json({ message: 'Not found' });
@@ -54,6 +54,7 @@ const updateSharedGoal = async (req, res) => {
     if (title) sharedGoal.title = title;
     if (description) sharedGoal.description = description;
     if (uomType) sharedGoal.uomType = uomType;
+    if (direction) sharedGoal.direction = direction;
     if (target) sharedGoal.target = target;
     if (timeline) sharedGoal.timeline = timeline;
     if (assignedTo) sharedGoal.assignedTo = assignedTo;
@@ -68,6 +69,7 @@ const updateSharedGoal = async (req, res) => {
           title: sharedGoal.title, 
           description: sharedGoal.description, 
           uomType: sharedGoal.uomType, 
+          direction: sharedGoal.direction,
           target: sharedGoal.target 
         } 
       }

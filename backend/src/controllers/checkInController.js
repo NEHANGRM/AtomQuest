@@ -1,6 +1,7 @@
 const CheckIn = require('../models/CheckIn');
 const Goal = require('../models/Goal');
 const AuditLog = require('../models/AuditLog');
+const { calculateProgress } = require('../utils/calculationEngine');
 
 const logAudit = async (userId, action, model, documentId, previousValue, newValue) => {
   await AuditLog.create({ user: userId, action, model, documentId, previousValue, newValue });
@@ -37,18 +38,8 @@ const createCheckIn = async (req, res) => {
       comments
     });
 
-    // Update Goal progress
-    let progressScore = 0;
-    if (goal.uomType === 'Numeric' || goal.uomType === 'Percentage') {
-       progressScore = (Number(actualValue) / goal.target) * 100;
-    } else if (goal.uomType === 'Zero-based') {
-       progressScore = Number(actualValue) === 0 ? 100 : 0;
-    } else if (goal.uomType === 'Timeline') {
-       progressScore = status === 'Completed' ? 100 : 50;
-    }
-    
-    // Cap at 100%
-    if (progressScore > 100) progressScore = 100;
+    // Update Goal progress using the Engine
+    const progressScore = calculateProgress(goal, actualValue, status);
 
     const previousStatus = goal.status;
     goal.status = status;

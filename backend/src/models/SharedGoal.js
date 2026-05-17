@@ -6,6 +6,7 @@ const sharedGoalSchema = mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
   uomType: { type: String, enum: ['Numeric', 'Percentage', 'Timeline', 'Zero-based'], required: true },
+  direction: { type: String, enum: ['Higher', 'Lower'], default: 'Higher' },
   target: { type: Number, required: true },
   timeline: { type: String, required: true },
   assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]

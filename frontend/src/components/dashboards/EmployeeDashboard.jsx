@@ -25,7 +25,10 @@ const EmployeeDashboard = () => {
 
   const totalGoals = goalSheets.reduce((acc, sheet) => acc + sheet.goals.length, 0);
   const activeSheet = goalSheets.find(s => s.status === 'approved') || goalSheets[0];
-  const overallProgress = 35; // Mock progress
+  
+  const overallProgress = activeSheet?.goals?.length 
+    ? Math.round(activeSheet.goals.reduce((sum, g) => sum + ((g.progressScore || 0) * (g.weightage / 100)), 0)) 
+    : 0;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

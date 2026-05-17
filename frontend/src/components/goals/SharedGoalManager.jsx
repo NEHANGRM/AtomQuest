@@ -11,6 +11,7 @@ const sharedGoalSchema = z.object({
   title: z.string().min(5, "Title too short"),
   description: z.string().optional(),
   uomType: z.enum(['Numeric', 'Percentage', 'Timeline', 'Zero-based']),
+  direction: z.enum(['Higher', 'Lower']).optional(),
   target: z.number().min(1, "Must be > 0"),
   timeline: z.string().min(2, "Required")
 });
@@ -25,6 +26,7 @@ const SharedGoalManager = () => {
     resolver: zodResolver(sharedGoalSchema),
     defaultValues: {
       uomType: 'Numeric',
+      direction: 'Higher',
       timeline: 'Full Year'
     }
   });
@@ -125,6 +127,13 @@ const SharedGoalManager = () => {
                 <select {...register('uomType')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 bg-white">
                   <option value="Numeric">Numeric</option>
                   <option value="Percentage">Percentage</option>
+                </select>
+              </div>
+              <div className="lg:col-span-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Optimization</label>
+                <select {...register('direction')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="Higher">Higher is Better</option>
+                  <option value="Lower">Lower is Better</option>
                 </select>
               </div>
               <div className="lg:col-span-1">
