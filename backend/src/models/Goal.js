@@ -11,7 +11,8 @@ const goalSchema = mongoose.Schema({
   weightage: { type: Number, required: true, min: 10, max: 100 },
   deadline: { type: Date, required: true },
   status: { type: String, enum: ['Not Started', 'On Track', 'Completed'], default: 'Not Started' },
-  sharedFrom: { type: mongoose.Schema.Types.ObjectId, ref: 'Goal' },
+  isShared: { type: Boolean, default: false },
+  sharedGoalId: { type: mongoose.Schema.Types.ObjectId, ref: 'SharedGoal', default: null },
   achievements: [{
     quarter: { type: String, enum: ['Q1', 'Q2', 'Q3', 'Q4'], required: true },
     actualValue: { type: Number, required: true },

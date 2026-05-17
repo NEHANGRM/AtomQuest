@@ -13,21 +13,21 @@ const seedDB = async () => {
 
     const admin = await User.create({
       name: 'Admin User',
-      email: 'admin@atomquest.com',
+      email: 'admin@test.com',
       password: 'password123',
       role: 'admin'
     });
 
     const manager = await User.create({
       name: 'Manager User',
-      email: 'manager@atomquest.com',
+      email: 'manager@test.com',
       password: 'password123',
       role: 'manager'
     });
 
     const employee = await User.create({
       name: 'Employee User',
-      email: 'employee@atomquest.com',
+      email: 'employee@test.com',
       password: 'password123',
       role: 'employee',
       managerId: manager._id

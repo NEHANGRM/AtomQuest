@@ -13,7 +13,9 @@ const goalSchema = z.object({
   uomType: z.enum(['Numeric', 'Percentage', 'Timeline', 'Zero-based']),
   target: z.number().min(1, "Must be > 0"),
   weightage: z.number().min(10, "Min 10%").max(100, "Max 100%"),
-  timeline: z.string().min(2, "Required")
+  timeline: z.string().min(2, "Required"),
+  isShared: z.boolean().optional(),
+  sharedGoalId: z.string().optional()
 });
 
 const formSchema = z.object({
@@ -23,6 +25,13 @@ const formSchema = z.object({
 
 const GoalCreationForm = ({ onComplete }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [assignedSharedGoals, setAssignedSharedGoals] = useState([]);
+
+  React.useEffect(() => {
+    api.get('/api/shared-goals/employee')
+      .then(res => setAssignedSharedGoals(res.data))
+      .catch(err => console.error(err));
+  }, []);
 
   const { register, control, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: zodResolver(formSchema),
@@ -75,13 +84,42 @@ const GoalCreationForm = ({ onComplete }) => {
       <form className="space-y-8">
         <div className="w-48">
           <label className="block text-sm font-medium text-gray-700 mb-1">Performance Year</label>
-          <select {...register("year")} className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border">
+          <select {...register("year")} className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border bg-white">
             <option value="2023">2023</option>
             <option value="2024">2024</option>
             <option value="2025">2025</option>
             <option value="2026">2026</option>
           </select>
         </div>
+
+        {assignedSharedGoals.length > 0 && (
+          <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-blue-900 mb-3 flex items-center">
+              <Network className="w-4 h-4 mr-1.5" /> Department KPIs assigned to you
+            </h3>
+            <div className="space-y-3">
+              {assignedSharedGoals.map(sg => {
+                const isAlreadyAdded = watchGoals.some(g => g.sharedGoalId === sg._id);
+                return (
+                  <div key={sg._id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-blue-100 shadow-sm">
+                    <div>
+                      <p className="font-semibold text-gray-800 text-sm">{sg.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Target: {sg.target} {sg.uomType} | {sg.thrustArea}</p>
+                    </div>
+                    <button 
+                      type="button"
+                      disabled={isAlreadyAdded}
+                      onClick={() => append({ thrustArea: sg.thrustArea, title: sg.title, description: sg.description, uomType: sg.uomType, target: sg.target, weightage: 10, timeline: sg.timeline, isShared: true, sharedGoalId: sg._id })}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white text-xs font-medium rounded transition"
+                    >
+                      {isAlreadyAdded ? 'Added' : 'Add to Sheet'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           {fields.map((field, index) => (
@@ -98,19 +136,19 @@ const GoalCreationForm = ({ onComplete }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="lg:col-span-1">
                   <label className="block text-xs font-medium text-gray-700 mb-1">Thrust Area</label>
-                  <input {...register(`goals.${index}.thrustArea`)} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 transition-shadow outline-none" placeholder="e.g. Sales, Tech" />
+                  <input readOnly={watchGoals[index]?.isShared} {...register(`goals.${index}.thrustArea`)} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} placeholder="e.g. Sales, Tech" />
                   {errors.goals?.[index]?.thrustArea && <p className="text-red-500 text-xs mt-1">{errors.goals[index].thrustArea.message}</p>}
                 </div>
                 
                 <div className="lg:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Goal Title</label>
-                  <input {...register(`goals.${index}.title`)} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 transition-shadow outline-none" placeholder="e.g. Increase Q1 Revenue" />
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Goal Title {watchGoals[index]?.isShared && <span className="text-blue-600 text-[10px] ml-1 bg-blue-100 px-1.5 py-0.5 rounded">SHARED KPI</span>}</label>
+                  <input readOnly={watchGoals[index]?.isShared} {...register(`goals.${index}.title`)} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} placeholder="e.g. Increase Q1 Revenue" />
                   {errors.goals?.[index]?.title && <p className="text-red-500 text-xs mt-1">{errors.goals[index].title.message}</p>}
                 </div>
 
                 <div className="lg:col-span-1">
                   <label className="block text-xs font-medium text-gray-700 mb-1">Timeline</label>
-                  <select {...register(`goals.${index}.timeline`)} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 transition-shadow outline-none bg-white">
+                  <select disabled={watchGoals[index]?.isShared} {...register(`goals.${index}.timeline`)} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}>
                     <option value="Q1">Q1</option>
                     <option value="Q2">Q2</option>
                     <option value="Q3">Q3</option>
@@ -123,12 +161,12 @@ const GoalCreationForm = ({ onComplete }) => {
 
                 <div className="lg:col-span-2">
                   <label className="block text-xs font-medium text-gray-700 mb-1">Description (Optional)</label>
-                  <input {...register(`goals.${index}.description`)} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 transition-shadow outline-none" placeholder="Detailed criteria..." />
+                  <input readOnly={watchGoals[index]?.isShared} {...register(`goals.${index}.description`)} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} placeholder="Detailed criteria..." />
                 </div>
 
                 <div className="lg:col-span-1">
                   <label className="block text-xs font-medium text-gray-700 mb-1">UoM Type</label>
-                  <select {...register(`goals.${index}.uomType`)} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 transition-shadow outline-none bg-white">
+                  <select disabled={watchGoals[index]?.isShared} {...register(`goals.${index}.uomType`)} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}>
                     <option value="Numeric">Numeric</option>
                     <option value="Percentage">Percentage</option>
                     <option value="Timeline">Timeline</option>
@@ -139,7 +177,7 @@ const GoalCreationForm = ({ onComplete }) => {
                 <div className="lg:col-span-1 grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Target</label>
-                    <input type="number" {...register(`goals.${index}.target`, { valueAsNumber: true })} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 transition-shadow outline-none" />
+                    <input type="number" readOnly={watchGoals[index]?.isShared} {...register(`goals.${index}.target`, { valueAsNumber: true })} className={`w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 outline-none ${watchGoals[index]?.isShared ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} />
                     {errors.goals?.[index]?.target && <p className="text-red-500 text-xs mt-1">{errors.goals[index].target.message}</p>}
                   </div>
                   <div>

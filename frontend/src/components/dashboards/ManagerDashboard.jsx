@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, FileWarning, TrendingUp } from 'lucide-react';
 import ManagerReviewModal from '../goals/ManagerReviewModal';
+import SharedGoalManager from '../goals/SharedGoalManager';
 
 const ManagerDashboard = () => {
   const [teamSheets, setTeamSheets] = useState([]);
@@ -83,6 +84,10 @@ const ManagerDashboard = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <SharedGoalManager />
       </div>
 
       {selectedSheet && (

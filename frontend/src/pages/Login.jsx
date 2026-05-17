@@ -58,7 +58,7 @@ const Login = () => {
           </button>
         </form>
         <div className="text-sm text-center text-gray-500">
-          Demo: admin@atomquest.com / password123
+          Demo: admin@test.com / password123
         </div>
         <div className="text-sm text-center text-gray-500 mt-4">
           Don't have an account? <Link to="/register" className="text-blue-600 hover:underline">Sign up</Link>
