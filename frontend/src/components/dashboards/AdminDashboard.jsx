@@ -6,7 +6,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell
 } from 'recharts';
 import { 
-  Users, Activity, LockOpen, Database, Shield, LayoutDashboard, Search, Plus, Edit2, Trash2, CheckCircle, RefreshCcw, Download
+  Users, Activity, Unlock, Database, Shield, LayoutDashboard, Search, Plus, Edit2, Trash2, CheckCircle, RefreshCcw, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReportingModule from './ReportingModule';
@@ -283,7 +283,7 @@ const AdminDashboard = () => {
                           onClick={() => handleUnlockSheet(sheet._id)}
                           className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded shadow-sm hover:bg-gray-50 hover:text-red-600 hover:border-red-300 transition disabled:opacity-30"
                         >
-                          <LockOpen size={14} className="mr-1.5" /> Force Unlock
+                          <Unlock size={14} className="mr-1.5" /> Force Unlock
                         </button>
                       </td>
                     </tr>
