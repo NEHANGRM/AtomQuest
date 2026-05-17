@@ -27,6 +27,7 @@ app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/goals', require('./src/routes/goalRoutes'));
 app.use('/api/admin', require('./src/routes/adminRoutes'));
 app.use('/api/shared-goals', require('./src/routes/sharedGoalRoutes'));
+app.use('/api/checkins', require('./src/routes/checkInRoutes'));
 
 // Basic route for health check
 app.get('/', (req, res) => {

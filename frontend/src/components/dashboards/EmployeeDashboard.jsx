@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Flag, CalendarCheck, ChevronRight, Plus } from 'lucide-react';
+import { Target, Flag, CalendarCheck, ChevronRight, Plus, Activity } from 'lucide-react';
 import GoalCreationForm from '../goals/GoalCreationForm';
+import QuarterlyUpdateModal from '../goals/QuarterlyUpdateModal';
 
 const EmployeeDashboard = () => {
   const [goalSheets, setGoalSheets] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [activeUpdateGoal, setActiveUpdateGoal] = useState(null);
 
   const fetchGoals = async () => {
     try {
@@ -88,10 +90,24 @@ const EmployeeDashboard = () => {
                 </div>
                 <p className="text-xs text-gray-500 mt-1.5 ml-4">Target: {goal.target} {goal.uomType}</p>
               </div>
-              <button className="px-4 py-2 bg-white group-hover:bg-blue-600 group-hover:text-white border border-gray-200 group-hover:border-blue-600 text-sm font-medium text-gray-700 rounded-lg shadow-sm transition-all flex items-center justify-center">
-                <CalendarCheck size={16} className="mr-2" />
-                Update Q1
-              </button>
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                <div className="w-full sm:w-32">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-500 font-medium">Progress</span>
+                    <span className="text-blue-600 font-bold">{goal.progressScore || 0}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${Math.min(goal.progressScore || 0, 100)}%` }}></div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setActiveUpdateGoal(goal)}
+                  className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-blue-600 hover:text-white border border-gray-200 hover:border-blue-600 text-sm font-medium text-blue-600 rounded-lg shadow-sm transition-all flex items-center justify-center"
+                >
+                  <Activity size={16} className="mr-2" />
+                  Log Update
+                </button>
+              </div>
             </div>
           )) : (
             <div className="text-center py-12 px-4 rounded-xl bg-gray-50 border border-dashed border-gray-200">
@@ -110,6 +126,17 @@ const EmployeeDashboard = () => {
           )}
         </div>
       </div>
+
+      {activeUpdateGoal && (
+        <QuarterlyUpdateModal 
+          goal={activeUpdateGoal}
+          onClose={() => setActiveUpdateGoal(null)}
+          onComplete={() => {
+            setActiveUpdateGoal(null);
+            fetchGoals(); // Re-fetch the dash
+          }}
+        />
+      )}
     </motion.div>
   );
 };
