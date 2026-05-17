@@ -134,7 +134,71 @@ const exportQuarterlyAchievements = async (req, res) => {
   }
 };
 
+// @desc    Get complete analytics dashboard data
+// @route   GET /api/reports/analytics
+// @access  Private (Admin)
+const getAnalyticsDashboard = async (req, res) => {
+  try {
+    const sheets = await GoalSheet.find({ status: 'approved' })
+      .populate({ path: 'user', select: 'department' })
+      .populate('goals');
+
+    // 1. Department Breakdown (Heatmap/Bar data)
+    const deptMap = {};
+    sheets.forEach(s => {
+      const d = s.user?.department || 'Unassigned';
+      if (!deptMap[d]) deptMap[d] = { totalProgress: 0, goalCount: 0 };
+      s.goals.forEach(g => {
+        deptMap[d].totalProgress += (g.progressScore || 0);
+        deptMap[d].goalCount += 1;
+      });
+    });
+
+    const departmentProgress = Object.keys(deptMap).map(name => ({
+      name,
+      completed: deptMap[name].goalCount === 0 ? 0 : Math.round(deptMap[name].totalProgress / deptMap[name].goalCount)
+    }));
+
+    // 2. Goal Status Distribution
+    const statusMap = { 'Completed': 0, 'On Track': 0, 'Not Started': 0 };
+    sheets.forEach(s => {
+      s.goals.forEach(g => {
+        if (statusMap[g.status] !== undefined) statusMap[g.status] += 1;
+      });
+    });
+    const statusDistribution = [
+      { name: 'Completed', value: statusMap['Completed'] },
+      { name: 'On Track', value: statusMap['On Track'] },
+      { name: 'Not Started', value: statusMap['Not Started'] }
+    ];
+
+    // 3. Quarterly Trends (CheckIns over time)
+    const checkIns = await CheckIn.find().sort({ createdAt: 1 });
+    const qMap = { 'Q1': 0, 'Q2': 0, 'Q3': 0, 'Q4': 0 };
+    const qCount = { 'Q1': 0, 'Q2': 0, 'Q3': 0, 'Q4': 0 };
+    
+    checkIns.forEach(ci => {
+      if (qMap[ci.quarter] !== undefined) {
+        // Average actual percentage could be tricky without goal target, but let's assume CheckIn log frequency / volume for trend
+        qMap[ci.quarter] += 1; // Activity volume
+      }
+    });
+
+    const quarterlyTrends = [
+      { quarter: 'Q1', activity: qMap['Q1'] },
+      { quarter: 'Q2', activity: qMap['Q2'] },
+      { quarter: 'Q3', activity: qMap['Q3'] },
+      { quarter: 'Q4', activity: qMap['Q4'] }
+    ];
+
+    res.json({ departmentProgress, statusDistribution, quarterlyTrends });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   exportGoalCompletion,
-  exportQuarterlyAchievements
+  exportQuarterlyAchievements,
+  getAnalyticsDashboard
 };

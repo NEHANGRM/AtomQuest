@@ -29,12 +29,37 @@ const ManagerDashboard = () => {
   const approvedCount = teamSheets.filter(s => s.status === 'approved').length;
   const activeSheets = teamSheets.filter(s => s.status === 'approved');
 
-  const mockProgressData = [
-    { month: 'Q1', performance: 65 },
-    { month: 'Q2', performance: 78 },
-    { month: 'Q3', performance: 82 },
-    { month: 'Q4', performance: 91 },
-  ];
+  // Compute Team Performance Trend from goal achievements
+  const qScores = { Q1: [], Q2: [], Q3: [], Q4: [] };
+  teamSheets.forEach(sheet => {
+    sheet.goals?.forEach(goal => {
+      // Find latest achievement for each quarter
+      ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+        const achs = goal.achievements?.filter(a => a.quarter === q) || [];
+        if (achs.length > 0) {
+          const latestAch = achs[achs.length - 1];
+          // simplistically approximate progress based on actual / target
+          let score = 0;
+          if (goal.uomType === 'Numeric' || goal.uomType === 'Percentage') {
+             score = goal.direction === 'Lower' ? (goal.target / latestAch.actualValue) * 100 : (latestAch.actualValue / goal.target) * 100;
+          } else {
+             score = 100; // simplistic for timeline/zero-based
+          }
+          if (score > 100) score = 100;
+          if (score < 0 || isNaN(score)) score = 0;
+          qScores[q].push(score);
+        }
+      });
+    });
+  });
+
+  const teamProgressTrend = ['Q1', 'Q2', 'Q3', 'Q4'].map(q => {
+    const sum = qScores[q].reduce((a, b) => a + b, 0);
+    return {
+      month: q,
+      performance: qScores[q].length > 0 ? Math.round(sum / qScores[q].length) : 0
+    };
+  });
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
@@ -58,7 +83,7 @@ const ManagerDashboard = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Team Performance Trend</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockProgressData}>
+              <LineChart data={teamProgressTrend}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} domain={[0, 100]} />

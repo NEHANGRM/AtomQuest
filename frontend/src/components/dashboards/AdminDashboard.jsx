@@ -14,6 +14,7 @@ import ReportingModule from './ReportingModule';
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, sheets, audit
   const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
   const [sheets, setSheets] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -29,6 +30,9 @@ const AdminDashboard = () => {
     try {
       const res = await api.get('/api/admin/stats');
       setStats(res.data);
+      
+      const analyticsRes = await api.get('/api/reports/analytics');
+      setAnalytics(analyticsRes.data);
     } catch (err) {
       console.error(err);
     }
@@ -90,20 +94,25 @@ const AdminDashboard = () => {
     }
   };
 
-  // Mock data for charts
-  const completionData = [
-    { name: 'Engineering', completed: 85 },
-    { name: 'Sales', completed: 65 },
-    { name: 'Marketing', completed: 90 },
-    { name: 'HR', completed: 75 },
-    { name: 'Finance', completed: 95 }
+  // Real data for charts from backend
+  const completionData = analytics?.departmentProgress || [
+    { name: 'Engineering', completed: 0 },
+    { name: 'Sales', completed: 0 }
   ];
 
-  const pieData = [
-    { name: 'Approved', value: stats?.approvedCount || 0 },
-    { name: 'Pending Review', value: stats?.submittedCount || 0 },
-    { name: 'Draft/Returned', value: stats?.draftCount || 0 },
+  const pieData = analytics?.statusDistribution || [
+    { name: 'Completed', value: 0 },
+    { name: 'On Track', value: 0 },
+    { name: 'Not Started', value: 0 },
   ];
+  
+  const trendData = analytics?.quarterlyTrends || [
+    { quarter: 'Q1', activity: 0 },
+    { quarter: 'Q2', activity: 0 },
+    { quarter: 'Q3', activity: 0 },
+    { quarter: 'Q4', activity: 0 }
+  ];
+
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b'];
 
   return (
@@ -179,10 +188,25 @@ const AdminDashboard = () => {
                 </ResponsiveContainer>
               </div>
               <div className="flex justify-center space-x-6 mt-4">
-                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>Approved</div>
-                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>Review</div>
-                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div>Draft</div>
+                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>Completed</div>
+                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>On Track</div>
+                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div>Not Started</div>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-6">Quarterly Check-In Activity Trends</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="quarter" axisLine={false} tickLine={false} />
+                  <YAxis axisLine={false} tickLine={false} />
+                  <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                  <Line type="monotone" dataKey="activity" stroke="#6366f1" strokeWidth={3} dot={{r: 4, fill: '#6366f1', strokeWidth: 0}} activeDot={{r: 6}} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </motion.div>
