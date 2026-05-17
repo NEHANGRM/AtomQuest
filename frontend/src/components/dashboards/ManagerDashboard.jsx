@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, FileWarning, TrendingUp } from 'lucide-react';
+import { Users, FileWarning, TrendingUp, Activity, LayoutList } from 'lucide-react';
 import ManagerReviewModal from '../goals/ManagerReviewModal';
 import SharedGoalManager from '../goals/SharedGoalManager';
+import ManagerCheckInModal from '../goals/ManagerCheckInModal';
 
 const ManagerDashboard = () => {
   const [teamSheets, setTeamSheets] = useState([]);
   const [selectedSheet, setSelectedSheet] = useState(null);
+  const [activeCheckInGoal, setActiveCheckInGoal] = useState(null);
 
   useEffect(() => {
     const fetchTeamData = async () => {
@@ -22,8 +24,10 @@ const ManagerDashboard = () => {
     fetchTeamData();
   }, []);
 
+  const pendingReview = teamSheets.filter(s => s.status === 'submitted');
   const pendingCount = teamSheets.filter(s => s.status === 'submitted').length;
   const approvedCount = teamSheets.filter(s => s.status === 'approved').length;
+  const activeSheets = teamSheets.filter(s => s.status === 'approved');
 
   const mockProgressData = [
     { month: 'Q1', performance: 65 },
@@ -82,8 +86,77 @@ const ManagerDashboard = () => {
                 </button>
               </div>
             ))}
+            {pendingReview.length === 0 && (
+              <p className="text-sm text-gray-500 italic p-4 text-center border border-dashed border-gray-200 rounded-lg">No pending approvals at the moment.</p>
+            )}
           </div>
         </div>
+      </div>
+
+      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex items-center mb-6 border-b border-gray-100 pb-4">
+          <LayoutList className="w-5 h-5 mr-2 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-800">Active Team Goals Progress</h3>
+        </div>
+        
+        {activeSheets.length === 0 ? (
+          <p className="text-sm text-gray-500 italic text-center py-6">No approved goal sheets to track yet.</p>
+        ) : (
+          <div className="space-y-6">
+            {activeSheets.map(sheet => (
+              <div key={sheet._id} className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold text-gray-800">{sheet.user?.name}</h4>
+                    <p className="text-xs text-gray-500">{sheet.year} Performance Cycle</p>
+                  </div>
+                  <span className="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-md uppercase">Approved</span>
+                </div>
+                <div className="p-0">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-white border-b border-gray-100 text-gray-500 text-xs uppercase">
+                      <tr>
+                        <th className="px-5 py-3 font-medium">Goal</th>
+                        <th className="px-5 py-3 font-medium">Target</th>
+                        <th className="px-5 py-3 font-medium">Current Progress</th>
+                        <th className="px-5 py-3 font-medium text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {sheet.goals?.map(goal => (
+                        <tr key={goal._id} className="hover:bg-blue-50/30 transition">
+                          <td className="px-5 py-4">
+                            <p className="font-medium text-gray-900">{goal.title}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{goal.thrustArea}</p>
+                          </td>
+                          <td className="px-5 py-4 font-semibold text-gray-700">
+                            {goal.target} <span className="text-xs text-gray-400 font-normal">{goal.uomType}</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${goal.progressScore || 0}%` }}></div>
+                              </div>
+                              <span className="text-xs font-bold text-blue-600">{goal.progressScore || 0}%</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <button 
+                              onClick={() => setActiveCheckInGoal(goal)}
+                              className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-600 text-xs font-medium rounded-md shadow-sm transition"
+                            >
+                              <Activity size={14} className="mr-1.5"/> Review Check-ins
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-8">
@@ -99,6 +172,13 @@ const ManagerDashboard = () => {
             // Re-fetch data
             api.get('/api/goals/team').then(res => setTeamSheets(res.data));
           }}
+        />
+      )}
+
+      {activeCheckInGoal && (
+        <ManagerCheckInModal 
+          goal={activeCheckInGoal}
+          onClose={() => setActiveCheckInGoal(null)}
         />
       )}
     </motion.div>

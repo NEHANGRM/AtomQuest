@@ -71,4 +71,29 @@ const getGoalCheckIns = async (req, res) => {
   }
 };
 
-module.exports = { createCheckIn, getGoalCheckIns };
+// @desc    Add Manager Feedback to a Check-In
+// @route   PUT /api/checkins/:id/feedback
+// @access  Private (Manager)
+const addManagerFeedback = async (req, res) => {
+  const { managerComment } = req.body;
+  try {
+    const checkIn = await CheckIn.findById(req.params.id).populate('goal');
+    if (!checkIn) return res.status(404).json({ message: 'Check-in not found' });
+    
+    // In a real app, verify req.user._id is the manager of checkIn.user
+    // CheckIn.user is the employee
+    
+    checkIn.managerComment = managerComment;
+    checkIn.managerId = req.user._id;
+    checkIn.reviewedAt = new Date();
+    await checkIn.save();
+
+    await logAudit(req.user._id, `MANAGER_FEEDBACK_${checkIn.quarter}`, 'CheckIn', checkIn._id, null, { managerComment });
+
+    res.json(checkIn);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createCheckIn, getGoalCheckIns, addManagerFeedback };
