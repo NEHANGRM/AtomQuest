@@ -10,16 +10,21 @@ const logAudit = async (userId, action, model, documentId, previousValue, newVal
 // @route   POST /api/goals
 // @access  Private (Employee)
 const createGoalSheet = async (req, res) => {
-  const { year, goals } = req.body;
+  const { year, goals, status = 'submitted' } = req.body;
   
   try {
-    // Validate total weightage
-    const totalWeightage = goals.reduce((acc, goal) => acc + Number(goal.weightage), 0);
-    if (totalWeightage !== 100) return res.status(400).json({ message: 'Total weightage must be 100%' });
-    if (goals.length > 8) return res.status(400).json({ message: 'Maximum 8 goals allowed' });
-    if (goals.some(g => Number(g.weightage) < 10)) return res.status(400).json({ message: 'Minimum weightage per goal is 10%' });
+    const totalWeightage = goals.reduce((acc, goal) => acc + Number(goal.weightage || 0), 0);
+    
+    if (status === 'submitted') {
+      if (totalWeightage !== 100) return res.status(400).json({ message: 'Total weightage must be exactly 100% to submit.' });
+      if (goals.length > 8) return res.status(400).json({ message: 'Maximum 8 goals allowed.' });
+      if (goals.some(g => Number(g.weightage) < 10)) return res.status(400).json({ message: 'Minimum weightage per goal is 10%.' });
+    } else {
+      if (totalWeightage > 100) return res.status(400).json({ message: 'Total weightage cannot exceed 100%.' });
+      if (goals.length > 8) return res.status(400).json({ message: 'Maximum 8 goals allowed.' });
+    }
 
-    const goalSheet = await GoalSheet.create({ user: req.user._id, year, status: 'submitted' });
+    const goalSheet = await GoalSheet.create({ user: req.user._id, year, status });
     
     const createdGoals = [];
     for (const g of goals) {
@@ -123,4 +128,46 @@ const updateAchievement = async (req, res) => {
   }
 };
 
-module.exports = { createGoalSheet, getMyGoalSheets, getTeamGoalSheets, updateGoalSheetStatus, updateAchievement };
+// @desc    Update a Draft Goal Sheet
+// @route   PUT /api/goals/sheet/:id
+// @access  Private (Employee)
+const updateGoalSheet = async (req, res) => {
+  const { goals, status } = req.body;
+  try {
+    const sheet = await GoalSheet.findById(req.params.id);
+    if (!sheet) return res.status(404).json({ message: 'Goal sheet not found' });
+    if (sheet.user.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' });
+    if (sheet.status !== 'draft' && sheet.status !== 'returned') return res.status(400).json({ message: 'Can only edit draft or returned sheets' });
+
+    const totalWeightage = goals.reduce((acc, goal) => acc + Number(goal.weightage || 0), 0);
+    if (status === 'submitted') {
+      if (totalWeightage !== 100) return res.status(400).json({ message: 'Total weightage must be exactly 100% to submit.' });
+      if (goals.length > 8) return res.status(400).json({ message: 'Maximum 8 goals allowed.' });
+      if (goals.some(g => Number(g.weightage) < 10)) return res.status(400).json({ message: 'Minimum weightage per goal is 10%.' });
+    } else {
+      if (totalWeightage > 100) return res.status(400).json({ message: 'Total weightage cannot exceed 100%.' });
+      if (goals.length > 8) return res.status(400).json({ message: 'Maximum 8 goals allowed.' });
+    }
+
+    // Delete old goals
+    await Goal.deleteMany({ _id: { $in: sheet.goals } });
+
+    // Create new goals
+    const createdGoals = [];
+    for (const g of goals) {
+      const goal = await Goal.create({ ...g, user: req.user._id, goalSheet: sheet._id });
+      createdGoals.push(goal._id);
+    }
+
+    sheet.goals = createdGoals;
+    sheet.status = status || sheet.status;
+    await sheet.save();
+
+    await logAudit(req.user._id, 'UPDATE_GOAL_SHEET', 'GoalSheet', sheet._id, null, sheet);
+    res.json(sheet);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createGoalSheet, updateGoalSheet, getMyGoalSheets, getTeamGoalSheets, updateGoalSheetStatus, updateAchievement };

@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { motion } from 'framer-motion';
-import { Target, Flag, CalendarCheck, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Target, Flag, CalendarCheck, ChevronRight, Plus } from 'lucide-react';
+import GoalCreationForm from '../goals/GoalCreationForm';
 
 const EmployeeDashboard = () => {
   const [goalSheets, setGoalSheets] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  const fetchGoals = async () => {
+    try {
+      const { data } = await api.get('/api/goals/my');
+      setGoalSheets(data);
+    } catch (err) {
+      console.error('Failed to fetch goals', err);
+    }
+  };
 
   useEffect(() => {
-    const fetchGoals = async () => {
-      try {
-        const { data } = await api.get('/api/goals/my');
-        setGoalSheets(data);
-      } catch (err) {
-        console.error('Failed to fetch goals', err);
-      }
-    };
     fetchGoals();
   }, []);
 
@@ -52,8 +55,29 @@ const EmployeeDashboard = () => {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
           <h3 className="text-lg font-semibold text-gray-800">Quarterly Updates Needed</h3>
-          <button className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center transition">View All <ChevronRight size={16} className="ml-1"/></button>
+          <div className="flex space-x-3">
+            <button 
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md flex items-center transition"
+            >
+              <Plus size={16} className="mr-1"/> {showCreateForm ? 'Close Form' : 'New Goal Sheet'}
+            </button>
+          </div>
         </div>
+
+        <AnimatePresence>
+          {showCreateForm && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }} 
+              animate={{ height: 'auto', opacity: 1 }} 
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden mb-8"
+            >
+              <GoalCreationForm onComplete={() => { setShowCreateForm(false); fetchGoals(); }} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="space-y-4">
           {activeSheet?.goals?.length > 0 ? activeSheet.goals.map(goal => (
             <div key={goal._id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white hover:bg-blue-50/50 rounded-xl border border-gray-200 hover:border-blue-200 transition-all shadow-sm hover:shadow">
@@ -76,7 +100,12 @@ const EmployeeDashboard = () => {
               </div>
               <h3 className="text-sm font-medium text-gray-900">No active goals</h3>
               <p className="text-sm text-gray-500 mt-1">Create a Goal Sheet and submit it to your manager to get started.</p>
-              <button className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 transition">Create Goal Sheet</button>
+              <button 
+                onClick={() => setShowCreateForm(true)}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 transition"
+              >
+                Create Goal Sheet
+              </button>
             </div>
           )}
         </div>
