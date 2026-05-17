@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -16,15 +16,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-    const { data } = await axios.post(`${apiUrl}/api/auth/login`, { email, password });
+    const { data } = await api.post(`/api/auth/login`, { email, password });
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
   };
 
   const registerUser = async (name, email, password, role = 'employee') => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-    const { data } = await axios.post(`${apiUrl}/api/auth/register`, { name, email, password, role });
+    const { data } = await api.post(`/api/auth/register`, { name, email, password, role });
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
   };

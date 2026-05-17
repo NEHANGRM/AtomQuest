@@ -1,11 +1,30 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutDashboard, Target, Activity, Users } from 'lucide-react';
+import api from '../services/api';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [goalSheets, setGoalSheets] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        if (user) {
+          const { data } = await api.get('/api/goals/my');
+          setGoalSheets(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch goals', err);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchGoals();
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -52,21 +71,28 @@ const Dashboard = () => {
         </header>
 
         <main className="flex-1 p-6 overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Dashboard Cards Placeholder */}
-            <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-              <h3 className="text-gray-500 text-sm font-medium">Total Goals</h3>
-              <p className="text-3xl font-bold mt-2">12</p>
+          {loadingStats ? (
+            <p>Loading your data...</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+                <h3 className="text-gray-500 text-sm font-medium">Total Goal Sheets</h3>
+                <p className="text-3xl font-bold mt-2">{goalSheets.length}</p>
+              </div>
+              <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+                <h3 className="text-gray-500 text-sm font-medium">Approved Sheets</h3>
+                <p className="text-3xl font-bold mt-2 text-green-600">
+                  {goalSheets.filter(s => s.status === 'approved').length}
+                </p>
+              </div>
+              <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+                <h3 className="text-gray-500 text-sm font-medium">Total Goals</h3>
+                <p className="text-3xl font-bold mt-2 text-blue-600">
+                  {goalSheets.reduce((acc, sheet) => acc + sheet.goals.length, 0)}
+                </p>
+              </div>
             </div>
-            <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-              <h3 className="text-gray-500 text-sm font-medium">Completed</h3>
-              <p className="text-3xl font-bold mt-2 text-green-600">4</p>
-            </div>
-            <div className="p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-              <h3 className="text-gray-500 text-sm font-medium">Progress</h3>
-              <p className="text-3xl font-bold mt-2 text-blue-600">33%</p>
-            </div>
-          </div>
+          )}
         </main>
       </div>
     </div>
