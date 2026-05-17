@@ -3,9 +3,11 @@ import api from '../../services/api';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, FileWarning, TrendingUp } from 'lucide-react';
+import ManagerReviewModal from '../goals/ManagerReviewModal';
 
 const ManagerDashboard = () => {
   const [teamSheets, setTeamSheets] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState(null);
 
   useEffect(() => {
     const fetchTeamData = async () => {
@@ -71,12 +73,29 @@ const ManagerDashboard = () => {
               <div key={sheet._id} className="p-4 bg-blue-50/50 hover:bg-blue-50 rounded-lg border border-blue-100 transition">
                 <p className="text-sm font-medium text-gray-800">{sheet.user?.name} submitted goals</p>
                 <p className="text-xs text-gray-500 mt-1 mb-3">Review required for {sheet.year}</p>
-                <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-white px-3 py-1.5 rounded shadow-sm border border-blue-200 transition">Review Now &rarr;</button>
+                <button 
+                  onClick={() => setSelectedSheet(sheet)}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-white px-3 py-1.5 rounded shadow-sm border border-blue-200 transition"
+                >
+                  Review Now &rarr;
+                </button>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      {selectedSheet && (
+        <ManagerReviewModal 
+          sheet={selectedSheet} 
+          onClose={() => setSelectedSheet(null)} 
+          onComplete={() => {
+            setSelectedSheet(null);
+            // Re-fetch data
+            api.get('/api/goals/team').then(res => setTeamSheets(res.data));
+          }}
+        />
+      )}
     </motion.div>
   );
 };

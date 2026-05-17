@@ -70,21 +70,35 @@ const getTeamGoalSheets = async (req, res) => {
   }
 };
 
-// @desc    Approve/Reject Goal Sheet
+// @desc    Approve/Reject/Return Goal Sheet (with optional inline edits)
 // @route   PUT /api/goals/sheet/:id/status
 // @access  Private (Manager)
 const updateGoalSheetStatus = async (req, res) => {
-  const { status, managerComments } = req.body;
+  const { status, managerComments, goals } = req.body;
   try {
     const sheet = await GoalSheet.findById(req.params.id);
     if (!sheet) return res.status(404).json({ message: 'Goal sheet not found' });
     
+    // If manager edited goals inline before approval
+    if (goals && Array.isArray(goals) && goals.length > 0) {
+      const totalWeightage = goals.reduce((acc, goal) => acc + Number(goal.weightage || 0), 0);
+      if (totalWeightage !== 100) return res.status(400).json({ message: 'Total weightage must be exactly 100%.' });
+      
+      await Goal.deleteMany({ _id: { $in: sheet.goals } });
+      const createdGoals = [];
+      for (const g of goals) {
+        const goal = await Goal.create({ ...g, user: sheet.user, goalSheet: sheet._id });
+        createdGoals.push(goal._id);
+      }
+      sheet.goals = createdGoals;
+    }
+
     const previousStatus = sheet.status;
     sheet.status = status;
     if (managerComments) sheet.managerComments = managerComments;
     await sheet.save();
 
-    await logAudit(req.user._id, `UPDATE_SHEET_STATUS_${status.toUpperCase()}`, 'GoalSheet', sheet._id, { status: previousStatus }, { status });
+    await logAudit(req.user._id, `MANAGER_REVIEW_${status.toUpperCase()}`, 'GoalSheet', sheet._id, { status: previousStatus }, { status, managerComments });
 
     res.json(sheet);
   } catch (error) {
