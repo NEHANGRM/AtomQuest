@@ -6,9 +6,10 @@ import {
   LineChart, Line, PieChart, Pie, Cell
 } from 'recharts';
 import { 
-  Users, Activity, LockOpen, Database, Shield, LayoutDashboard, Search, Plus, Edit2, Trash2, CheckCircle, RefreshCcw
+  Users, Activity, LockOpen, Database, Shield, LayoutDashboard, Search, Plus, Edit2, Trash2, CheckCircle, RefreshCcw, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ReportingModule from './ReportingModule';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, sheets, audit
@@ -106,6 +107,9 @@ const AdminDashboard = () => {
         </button>
         <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'audit' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <Shield size={16} className="mr-2" /> Security & Audit
+        </button>
+        <button onClick={() => setActiveTab('reporting')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'reporting' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+          <Download size={16} className="mr-2" /> Export Reports
         </button>
       </div>
 
@@ -331,6 +335,11 @@ const AdminDashboard = () => {
             {logs.length === 0 && <div className="p-8 text-center text-gray-500">No audit logs found.</div>}
           </div>
         </motion.div>
+      )}
+
+      {/* REPORTING TAB */}
+      {activeTab === 'reporting' && (
+        <ReportingModule />
       )}
 
     </motion.div>
