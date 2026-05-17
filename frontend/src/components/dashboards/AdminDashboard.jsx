@@ -18,6 +18,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [sheets, setSheets] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Audit Filters
@@ -28,6 +29,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
+      setIsLoading(true);
       const res = await api.get('/api/admin/stats');
       setStats(res.data);
       
@@ -35,6 +37,8 @@ const AdminDashboard = () => {
       setAnalytics(analyticsRes.data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -131,13 +135,28 @@ const AdminDashboard = () => {
         <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'audit' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <Shield size={16} className="mr-2" /> Security & Audit
         </button>
-        <button onClick={() => setActiveTab('reporting')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'reporting' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => setActiveTab('reporting')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'reporting' ? 'bg-indigo-50 dark:bg-brand-900/40 text-indigo-700 dark:text-brand-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
           <Download size={16} className="mr-2" /> Export Reports
         </button>
       </div>
 
+      {isLoading && activeTab === 'overview' && (
+        <div className="animate-fade-in space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+             <div className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+             <div className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+             <div className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+             <div className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <div className="h-80 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+             <div className="h-80 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+          </div>
+        </div>
+      )}
+
       {/* OVERVIEW TAB */}
-      {activeTab === 'overview' && (
+      {!isLoading && activeTab === 'overview' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-4">

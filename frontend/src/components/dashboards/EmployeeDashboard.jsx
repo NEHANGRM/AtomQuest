@@ -9,13 +9,17 @@ const EmployeeDashboard = () => {
   const [goalSheets, setGoalSheets] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeUpdateGoal, setActiveUpdateGoal] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchGoals = async () => {
     try {
+      setIsLoading(true);
       const { data } = await api.get('/api/goals/my');
       setGoalSheets(data);
     } catch (err) {
       console.error('Failed to fetch goals', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -30,40 +34,53 @@ const EmployeeDashboard = () => {
     ? Math.round(activeSheet.goals.reduce((sum, g) => sum + ((g.progressScore || 0) * (g.weightage / 100)), 0)) 
     : 0;
 
+  if (isLoading) {
+    return (
+      <div className="animate-fade-in space-y-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+           <div className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+           <div className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+           <div className="h-28 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+        </div>
+        <div className="h-64 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
+      </div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition">
-          <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><Target size={24} /></div>
-          <div><p className="text-sm text-gray-500 font-medium">My Goals</p><h3 className="text-2xl font-bold text-gray-800">{totalGoals}</h3></div>
+        <div className="card p-6 flex items-center space-x-4">
+          <div className="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg"><Target size={24} /></div>
+          <div><p className="text-sm text-slate-500 dark:text-slate-400 font-medium">My Goals</p><h3 className="text-2xl font-display font-bold text-slate-800 dark:text-white">{totalGoals}</h3></div>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition">
-          <div className="p-3 bg-green-100 text-green-600 rounded-lg"><Flag size={24} /></div>
-          <div><p className="text-sm text-gray-500 font-medium">Current Status</p><h3 className="text-lg font-bold text-gray-800 capitalize">{activeSheet?.status || 'Draft'}</h3></div>
+        <div className="card p-6 flex items-center space-x-4">
+          <div className="p-3 bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 rounded-lg"><Flag size={24} /></div>
+          <div><p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Current Status</p><h3 className="text-lg font-display font-bold text-slate-800 dark:text-white capitalize">{activeSheet?.status || 'Draft'}</h3></div>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+        <div className="card p-6 flex flex-col justify-center">
           <div className="flex justify-between items-center mb-3">
-            <p className="text-sm text-gray-500 font-medium">Overall Progress</p>
-            <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{overallProgress}%</span>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Overall Progress</p>
+            <span className="text-sm font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/40 px-2 py-0.5 rounded">{overallProgress}%</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">
             <motion.div 
               initial={{ width: 0 }} 
               animate={{ width: `${overallProgress}%` }} 
               transition={{ duration: 1, delay: 0.2 }}
-              className="bg-blue-600 h-full rounded-full"
+              className="bg-brand-500 h-full rounded-full"
             />
           </div>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Quarterly Updates Needed</h3>
+      <div className="card p-6">
+        <div className="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-white">Quarterly Updates Needed</h3>
           <div className="flex space-x-3">
             <button 
               onClick={() => setShowCreateForm(!showCreateForm)}
-              className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md flex items-center transition"
+              className="btn-primary py-1.5"
             >
               <Plus size={16} className="mr-1"/> {showCreateForm ? 'Close Form' : 'New Goal Sheet'}
             </button>
@@ -85,43 +102,43 @@ const EmployeeDashboard = () => {
 
         <div className="space-y-4">
           {activeSheet?.goals?.length > 0 ? activeSheet.goals.map(goal => (
-            <div key={goal._id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white hover:bg-blue-50/50 rounded-xl border border-gray-200 hover:border-blue-200 transition-all shadow-sm hover:shadow">
+            <div key={goal._id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm">
               <div className="mb-4 sm:mb-0">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                  <p className="font-medium text-gray-800">{goal.title}</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-100">{goal.title}</p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1.5 ml-4">Target: {goal.target} {goal.uomType}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 ml-4">Target: {goal.target} {goal.uomType}</p>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                 <div className="w-full sm:w-32">
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-500 font-medium">Progress</span>
-                    <span className="text-blue-600 font-bold">{goal.progressScore || 0}%</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Progress</span>
+                    <span className="text-brand-600 dark:text-brand-400 font-bold">{goal.progressScore || 0}%</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${Math.min(goal.progressScore || 0, 100)}%` }}></div>
+                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${Math.min(goal.progressScore || 0, 100)}%` }}></div>
                   </div>
                 </div>
                 <button 
                   onClick={() => setActiveUpdateGoal(goal)}
-                  className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-blue-600 hover:text-white border border-gray-200 hover:border-blue-600 text-sm font-medium text-blue-600 rounded-lg shadow-sm transition-all flex items-center justify-center"
+                  className="btn-secondary text-xs sm:w-auto w-full"
                 >
-                  <Activity size={16} className="mr-2" />
+                  <Activity size={14} className="mr-2" />
                   Log Update
                 </button>
               </div>
             </div>
           )) : (
-            <div className="text-center py-12 px-4 rounded-xl bg-gray-50 border border-dashed border-gray-200">
-              <div className="mx-auto w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-3">
+            <div className="text-center py-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-200 dark:border-slate-700">
+              <div className="mx-auto w-12 h-12 bg-white dark:bg-slate-800 text-slate-400 shadow-sm rounded-full flex items-center justify-center mb-3">
                 <Target size={24} />
               </div>
-              <h3 className="text-sm font-medium text-gray-900">No active goals</h3>
-              <p className="text-sm text-gray-500 mt-1">Create a Goal Sheet and submit it to your manager to get started.</p>
+              <h3 className="text-sm font-medium text-slate-900 dark:text-white">No active goals</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Create a Goal Sheet and submit it to your manager to get started.</p>
               <button 
                 onClick={() => setShowCreateForm(true)}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 transition"
+                className="btn-primary mt-4"
               >
                 Create Goal Sheet
               </button>
