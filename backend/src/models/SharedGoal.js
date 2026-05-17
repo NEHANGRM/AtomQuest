@@ -12,4 +12,7 @@ const sharedGoalSchema = mongoose.Schema({
   assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
+const auditPlugin = require('../middleware/auditMiddleware');
+sharedGoalSchema.plugin(auditPlugin);
+
 module.exports = mongoose.model('SharedGoal', sharedGoalSchema);

@@ -19,6 +19,12 @@ const AdminDashboard = () => {
   const [logs, setLogs] = useState([]);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  // Audit Filters
+  const [auditSearch, setAuditSearch] = useState('');
+  const [auditAction, setAuditAction] = useState('All');
+  const [auditModel, setAuditModel] = useState('All');
+  const [expandedLogId, setExpandedLogId] = useState(null);
+
   const fetchStats = async () => {
     try {
       const res = await api.get('/api/admin/stats');
@@ -48,7 +54,12 @@ const AdminDashboard = () => {
 
   const fetchLogs = async () => {
     try {
-      const res = await api.get('/api/admin/audit');
+      const queryParams = new URLSearchParams();
+      if (auditSearch) queryParams.append('search', auditSearch);
+      if (auditAction !== 'All') queryParams.append('action', auditAction);
+      if (auditModel !== 'All') queryParams.append('modelFilter', auditModel);
+
+      const res = await api.get(`/api/admin/audit?${queryParams.toString()}`);
       setLogs(res.data);
     } catch (err) {
       console.error(err);
@@ -59,8 +70,11 @@ const AdminDashboard = () => {
     fetchStats();
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'sheets') fetchSheets();
-    if (activeTab === 'audit') fetchLogs();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'audit') fetchLogs();
+  }, [activeTab, auditSearch, auditAction, auditModel]);
 
   const handleUnlockSheet = async (id) => {
     try {
@@ -292,14 +306,37 @@ const AdminDashboard = () => {
       {/* AUDIT TAB */}
       {activeTab === 'audit' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50/50">
             <div>
               <h3 className="text-lg font-bold text-gray-900">System Audit Logs</h3>
               <p className="text-sm text-gray-500 mt-1">Immutable ledger of all critical system events and state changes.</p>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input type="text" placeholder="Search logs..." className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-64" />
+            <div className="flex flex-wrap gap-3 w-full md:w-auto">
+              <select value={auditModel} onChange={e => setAuditModel(e.target.value)} className="text-sm border-gray-300 rounded-lg p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="All">All Models</option>
+                <option value="GoalSheet">Goal Sheets</option>
+                <option value="Goal">Goals</option>
+                <option value="CheckIn">Check-Ins</option>
+                <option value="User">Users</option>
+              </select>
+              <select value={auditAction} onChange={e => setAuditAction(e.target.value)} className="text-sm border-gray-300 rounded-lg p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="All">All Actions</option>
+                <option value="CREATE">Creates</option>
+                <option value="UPDATE">Updates</option>
+                <option value="DELETE">Deletes</option>
+                <option value="FEEDBACK">Feedback</option>
+                <option value="STATUS">Status Changes</option>
+              </select>
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input 
+                  type="text" 
+                  value={auditSearch}
+                  onChange={e => setAuditSearch(e.target.value)}
+                  placeholder="Search logs..." 
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                />
+              </div>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -310,25 +347,48 @@ const AdminDashboard = () => {
                   <th className="px-6 py-4">User / Actor</th>
                   <th className="px-6 py-4">Action Event</th>
                   <th className="px-6 py-4">Target Model</th>
-                  <th className="px-6 py-4">Document ID</th>
+                  <th className="px-6 py-4 text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {logs.map(log => (
-                  <tr key={log._id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 text-xs font-mono text-gray-500">{new Date(log.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-gray-900">{log.user?.name || 'System'}</p>
-                      <p className="text-[10px] text-gray-500 uppercase">{log.user?.role || 'SYSTEM'}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-1 rounded border border-gray-200 font-mono">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 font-medium">{log.model}</td>
-                    <td className="px-6 py-4 text-xs font-mono text-gray-400">{log.documentId}</td>
-                  </tr>
+                  <React.Fragment key={log._id}>
+                    <tr className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setExpandedLogId(expandedLogId === log._id ? null : log._id)}>
+                      <td className="px-6 py-4 text-xs font-mono text-gray-500">{new Date(log.createdAt).toLocaleString()}</td>
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-gray-900">{log.user?.name || 'System'}</p>
+                        <p className="text-[10px] text-gray-500 uppercase">{log.user?.role || 'SYSTEM'}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-1 rounded border border-gray-200 font-mono">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 font-medium">{log.model}</td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                          {expandedLogId === log._id ? 'Hide' : 'View'}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedLogId === log._id && (
+                      <tr className="bg-gray-50/50">
+                        <td colSpan="5" className="px-6 py-4 border-t border-gray-100">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white p-3 rounded border border-gray-200 shadow-sm overflow-x-auto">
+                              <p className="text-xs font-bold text-gray-500 uppercase mb-2">Previous State</p>
+                              <pre className="text-[11px] font-mono text-red-600">{JSON.stringify(log.previousValue || {}, null, 2)}</pre>
+                            </div>
+                            <div className="bg-white p-3 rounded border border-gray-200 shadow-sm overflow-x-auto">
+                              <p className="text-xs font-bold text-gray-500 uppercase mb-2">New State</p>
+                              <pre className="text-[11px] font-mono text-green-600">{JSON.stringify(log.newValue || {}, null, 2)}</pre>
+                            </div>
+                          </div>
+                          <div className="mt-3 text-xs text-gray-500 font-mono">Document ID: {log.documentId}</div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

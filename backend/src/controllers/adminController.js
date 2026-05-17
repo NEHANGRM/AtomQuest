@@ -38,9 +38,29 @@ const getDashboardStats = async (req, res) => {
 };
 
 const getAuditLogs = async (req, res) => {
+  const { search, action, modelFilter } = req.query;
+
   try {
-    const logs = await AuditLog.find().populate('user', 'name email role').sort({ createdAt: -1 }).limit(100);
-    res.json(logs);
+    let query = {};
+    if (action && action !== 'All') query.action = { $regex: new RegExp(action, 'i') };
+    if (modelFilter && modelFilter !== 'All') query.model = modelFilter;
+    
+    // For search, we might want to search user name, which requires a more complex query or populated filtering.
+    // For simplicity, we'll fetch and then filter if a search term exists.
+    
+    let logs = await AuditLog.find(query).populate('user', 'name email role').sort({ createdAt: -1 });
+
+    if (search) {
+      const lowerSearch = search.toLowerCase();
+      logs = logs.filter(log => 
+        log.user?.name.toLowerCase().includes(lowerSearch) || 
+        log.user?.email.toLowerCase().includes(lowerSearch) ||
+        log.action.toLowerCase().includes(lowerSearch) ||
+        (log.documentId && log.documentId.toString().includes(lowerSearch))
+      );
+    }
+
+    res.json(logs.slice(0, 100)); // Limit to top 100 results after filter
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

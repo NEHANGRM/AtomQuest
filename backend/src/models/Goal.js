@@ -23,4 +23,7 @@ const goalSchema = mongoose.Schema({
   progressScore: { type: Number, default: 0 }
 }, { timestamps: true });
 
+const auditPlugin = require('../middleware/auditMiddleware');
+goalSchema.plugin(auditPlugin);
+
 module.exports = mongoose.model('Goal', goalSchema);

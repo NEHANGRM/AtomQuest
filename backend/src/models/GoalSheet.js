@@ -8,4 +8,7 @@ const goalSheetSchema = mongoose.Schema({
   goals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Goal' }]
 }, { timestamps: true });
 
+const auditPlugin = require('../middleware/auditMiddleware');
+goalSheetSchema.plugin(auditPlugin);
+
 module.exports = mongoose.model('GoalSheet', goalSheetSchema);

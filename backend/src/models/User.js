@@ -21,4 +21,7 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+const auditPlugin = require('../middleware/auditMiddleware');
+userSchema.plugin(auditPlugin);
+
 module.exports = mongoose.model('User', userSchema);

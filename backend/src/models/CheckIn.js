@@ -12,4 +12,7 @@ const checkInSchema = mongoose.Schema({
   reviewedAt: { type: Date }
 }, { timestamps: true });
 
+const auditPlugin = require('../middleware/auditMiddleware');
+checkInSchema.plugin(auditPlugin);
+
 module.exports = mongoose.model('CheckIn', checkInSchema);
