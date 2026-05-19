@@ -1,4 +1,4 @@
-# ATOMQUEST Goal Setting & Tracking Portal
+# PERFORMIX - Goal Setting & Tracking Portal
 
 A COMPLETE production-style web application for the ATOMQUEST hackathon.
 
