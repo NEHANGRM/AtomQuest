@@ -32,7 +32,7 @@ app.use('/api/reports', require('./src/routes/reportRoutes'));
 
 // Basic route for health check
 app.get('/', (req, res) => {
-  res.send('AtomQuest API is running');
+  res.send('Performix API is running');
 });
 
 // Error Middleware

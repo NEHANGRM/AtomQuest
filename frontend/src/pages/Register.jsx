@@ -37,9 +37,9 @@ const Register = () => {
         <div className="relative z-10">
           <div className="flex items-center space-x-3 mb-12">
             <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-glow">
-              <span className="text-white font-display font-bold text-xl">A</span>
+              <span className="text-white font-display font-bold text-xl">P</span>
             </div>
-            <h1 className="text-2xl font-display font-bold text-white tracking-tight">ATOMQUEST</h1>
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">PERFORMIX</h1>
           </div>
           
           <div className="max-w-md mt-24">
@@ -53,7 +53,7 @@ const Register = () => {
         </div>
         
         <div className="relative z-10 text-brand-400 text-sm font-medium">
-          &copy; {new Date().getFullYear()} AtomQuest Inc. All rights reserved.
+          &copy; {new Date().getFullYear()} Performix Inc. All rights reserved.
         </div>
       </div>
 
@@ -64,9 +64,9 @@ const Register = () => {
           {/* Mobile Header (Hidden on Desktop) */}
           <div className="flex lg:hidden items-center justify-center space-x-3 mb-12">
             <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-glow">
-              <span className="text-white font-display font-bold text-xl">A</span>
+              <span className="text-white font-display font-bold text-xl">P</span>
             </div>
-            <h1 className="text-2xl font-display font-bold text-slate-900 dark:text-white tracking-tight">ATOMQUEST</h1>
+            <h1 className="text-2xl font-display font-bold text-slate-900 dark:text-white tracking-tight">PERFORMIX</h1>
           </div>
 
           <div className="text-center lg:text-left">

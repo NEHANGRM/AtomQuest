@@ -55,9 +55,9 @@ const Dashboard = () => {
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center mr-3 shadow-glow">
-              <span className="text-white font-display font-bold text-lg">A</span>
+              <span className="text-white font-display font-bold text-lg">P</span>
             </div>
-            <h1 className="text-xl font-display font-bold text-slate-800 dark:text-white tracking-tight">ATOMQUEST</h1>
+            <h1 className="text-xl font-display font-bold text-slate-800 dark:text-white tracking-tight">PERFORMIX</h1>
           </div>
           <button className="md:hidden text-slate-500 dark:text-slate-400" onClick={() => setIsSidebarOpen(false)}>
             <X className="w-5 h-5" />
