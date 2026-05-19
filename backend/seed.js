@@ -17,7 +17,7 @@ const User = mongoose.model('User', UserSchema);
 
 const seedUsers = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI, { family: 4 });
     console.log('MongoDB Connected for Seeding');
 
     const salt = await bcrypt.genSalt(10);
