@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target, Plus, FileEdit, Send, Eye, Trash2, ChevronDown,
-  ChevronUp, Activity, CheckCircle, Clock, AlertCircle, RefreshCw, X
+  ChevronUp, Activity, CheckCircle, Clock, AlertCircle, RefreshCw, X, Save
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -228,79 +228,259 @@ const GoalSheetCard = ({ sheet, onRefresh }) => {
 
 
 // ── Draft Editor ──────────────────────────────────────────────
+const THRUST_AREAS = ['Revenue Growth', 'Customer Experience', 'Innovation', 'Operational Excellence', 'People & Culture', 'Compliance & Risk', 'Sales', 'Technology', 'Other'];
+const TIMELINES = ['Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2', 'Full Year'];
+const UOM_TYPES = ['Numeric', 'Percentage', 'Timeline', 'Zero-based'];
+
+const emptyGoal = () => ({ thrustArea: 'Revenue Growth', title: '', description: '', uomType: 'Numeric', direction: 'Higher', target: 100, weightage: 10, timeline: 'Q4' });
+
 const DraftEditor = ({ sheet, onClose, onSaved }) => {
+  const [goals, setGoals] = useState(
+    sheet.goals?.length > 0
+      ? sheet.goals.map(g => ({
+          thrustArea: g.thrustArea || '',
+          title: g.title || '',
+          description: g.description || '',
+          uomType: g.uomType || 'Numeric',
+          direction: g.direction || 'Higher',
+          target: g.target ?? 100,
+          weightage: g.weightage ?? 10,
+          timeline: g.timeline || 'Q4',
+          isShared: g.isShared || false,
+          sharedGoalId: g.sharedGoalId,
+        }))
+      : [emptyGoal()]
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmitDraft = async () => {
-    const totalWeight = sheet.goals?.reduce((s, g) => s + Number(g.weightage || 0), 0) || 0;
-    if (totalWeight !== 100) {
+  const totalWeight = goals.reduce((s, g) => s + (Number(g.weightage) || 0), 0);
+
+  const updateGoal = (index, field, value) =>
+    setGoals(prev => prev.map((g, i) => i === index ? { ...g, [field]: value } : g));
+
+  const addGoal = () => {
+    if (goals.length >= 8) { toast.error('Maximum 8 goals allowed.'); return; }
+    setGoals(prev => [...prev, emptyGoal()]);
+  };
+
+  const removeGoal = (index) => {
+    if (goals.length <= 1) { toast.error('At least 1 goal is required.'); return; }
+    setGoals(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSave = async (status) => {
+    if (goals.some(g => !g.title.trim() || !g.thrustArea.trim())) {
+      toast.error('Please fill in Title and Thrust Area for all goals.');
+      return;
+    }
+    if (status === 'submitted' && totalWeight !== 100) {
       toast.error(`Total weightage is ${totalWeight}%. Must be exactly 100% to submit.`);
+      return;
+    }
+    if (status === 'submitted' && goals.some(g => Number(g.weightage) < 10)) {
+      toast.error('Each goal must have at least 10% weightage.');
+      return;
+    }
+    if (status === 'draft' && totalWeight > 100) {
+      toast.error('Total weightage cannot exceed 100%.');
       return;
     }
     try {
       setIsSubmitting(true);
-      await api.put(`/api/goals/sheet/${sheet._id}/status`, { status: 'submitted' });
-      toast.success('Goal sheet submitted to your manager!');
+      await api.put(`/api/goals/sheet/${sheet._id}`, { goals, status });
+      toast.success(status === 'submitted' ? 'Goal sheet submitted to your manager!' : 'Draft saved successfully!');
       onSaved();
-      onClose();
+      if (status === 'submitted') onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to submit');
+      toast.error(err.response?.data?.message || 'Failed to save');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const totalWeight = sheet.goals?.reduce((s, g) => s + Number(g.weightage || 0), 0) || 0;
-
   return (
-    <div className="card p-6 border-l-4 border-l-amber-400">
-      <div className="section-header">
+    <div className="card border-l-4 border-l-amber-400 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-5 bg-amber-50/50 dark:bg-amber-950/10 border-b border-amber-100 dark:border-amber-900/30">
         <div>
-          <h3 className="section-title flex items-center gap-2">
-            <FileEdit className="w-5 h-5 text-amber-500" />
-            Draft — FY {sheet.year}
+          <h3 className="font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <FileEdit className="w-5 h-5 text-amber-500" /> Editing Draft — FY {sheet.year}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {sheet.goals?.length || 0} goals · Total weightage:
-            <span className={`font-bold ml-1 ${totalWeight === 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {goals.length} goal{goals.length !== 1 ? 's' : ''} · Total weightage:
+            <span className={`font-bold ml-1 ${totalWeight === 100 ? 'text-emerald-600 dark:text-emerald-400' : totalWeight > 100 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
               {totalWeight}%
             </span>
+            {totalWeight === 100 && <span className="ml-1 text-emerald-600 dark:text-emerald-400">✓</span>}
           </p>
         </div>
-        <button onClick={onClose} className="btn-secondary p-1.5">
+        <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="space-y-3 mb-5">
-        {sheet.goals?.map(goal => (
-          <div key={goal._id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{goal.title}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{goal.thrustArea} · {goal.uomType} · Target: {goal.target}</p>
+      {/* Goal Forms */}
+      <div className="p-5 space-y-4">
+        {goals.map((goal, idx) => (
+          <div key={idx} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50/40 dark:bg-slate-900/40 hover:border-brand-300 dark:hover:border-brand-700 transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Goal #{idx + 1}{goal.isShared ? ' · Shared KPI' : ''}</span>
+              <button type="button" onClick={() => removeGoal(idx)} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-md transition" title="Remove goal">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <span className="ml-3 flex-shrink-0 badge badge-brand">{goal.weightage}%</span>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Thrust Area */}
+              <div>
+                <label className="label-text">Thrust Area</label>
+                <select
+                  disabled={goal.isShared}
+                  value={goal.thrustArea}
+                  onChange={e => updateGoal(idx, 'thrustArea', e.target.value)}
+                  className={`input-field ${goal.isShared ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {THRUST_AREAS.map(a => <option key={a}>{a}</option>)}
+                </select>
+              </div>
+
+              {/* Timeline */}
+              <div>
+                <label className="label-text">Timeline</label>
+                <select
+                  disabled={goal.isShared}
+                  value={goal.timeline}
+                  onChange={e => updateGoal(idx, 'timeline', e.target.value)}
+                  className={`input-field ${goal.isShared ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {TIMELINES.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+
+              {/* Title */}
+              <div className="md:col-span-2">
+                <label className="label-text">Goal Title <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  readOnly={goal.isShared}
+                  value={goal.title}
+                  onChange={e => updateGoal(idx, 'title', e.target.value)}
+                  placeholder="e.g. Increase Q1 Revenue by 20%"
+                  className={`input-field ${goal.isShared ? 'opacity-60 cursor-not-allowed' : ''}`}
+                />
+              </div>
+
+              {/* Description */}
+              <div className="md:col-span-2">
+                <label className="label-text">Description <span className="text-slate-400 text-xs">(optional)</span></label>
+                <input
+                  type="text"
+                  readOnly={goal.isShared}
+                  value={goal.description}
+                  onChange={e => updateGoal(idx, 'description', e.target.value)}
+                  placeholder="Detailed success criteria..."
+                  className={`input-field ${goal.isShared ? 'opacity-60 cursor-not-allowed' : ''}`}
+                />
+              </div>
+
+              {/* UoM Type */}
+              <div>
+                <label className="label-text">UoM Type</label>
+                <select
+                  disabled={goal.isShared}
+                  value={goal.uomType}
+                  onChange={e => updateGoal(idx, 'uomType', e.target.value)}
+                  className={`input-field ${goal.isShared ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {UOM_TYPES.map(u => <option key={u}>{u}</option>)}
+                </select>
+              </div>
+
+              {/* Direction — only for Numeric / Percentage */}
+              {(goal.uomType === 'Numeric' || goal.uomType === 'Percentage') && (
+                <div>
+                  <label className="label-text">Optimization</label>
+                  <select
+                    disabled={goal.isShared}
+                    value={goal.direction || 'Higher'}
+                    onChange={e => updateGoal(idx, 'direction', e.target.value)}
+                    className={`input-field ${goal.isShared ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  >
+                    <option value="Higher">Higher is Better</option>
+                    <option value="Lower">Lower is Better</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Target */}
+              <div>
+                <label className="label-text">Target</label>
+                <input
+                  type="number"
+                  readOnly={goal.isShared}
+                  value={goal.target}
+                  onChange={e => updateGoal(idx, 'target', Number(e.target.value))}
+                  className={`input-field ${goal.isShared ? 'opacity-60 cursor-not-allowed' : ''}`}
+                />
+              </div>
+
+              {/* Weightage */}
+              <div>
+                <label className="label-text">Weightage (%)</label>
+                <input
+                  type="number"
+                  min="10" max="100"
+                  value={goal.weightage}
+                  onChange={e => updateGoal(idx, 'weightage', Number(e.target.value))}
+                  className="input-field"
+                />
+              </div>
+            </div>
           </div>
         ))}
-      </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Add Goal Button */}
         <button
-          onClick={handleSubmitDraft}
-          disabled={isSubmitting || totalWeight !== 100}
-          className="btn-primary flex-1"
-          title={totalWeight !== 100 ? `Weightage must be 100% (currently ${totalWeight}%)` : ''}
+          type="button"
+          onClick={addGoal}
+          disabled={goals.length >= 8}
+          className="w-full py-2.5 border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-brand-400 dark:hover:border-brand-600 hover:text-brand-600 dark:hover:text-brand-400 rounded-xl text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          <Send className="w-4 h-4" />
-          {isSubmitting ? 'Submitting...' : `Submit to Manager ${totalWeight !== 100 ? `(${totalWeight}/100%)` : ''}`}
+          <Plus className="w-4 h-4" />
+          {goals.length >= 8 ? 'Maximum 8 goals reached' : 'Add Another Goal'}
         </button>
       </div>
-      {totalWeight !== 100 && (
-        <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-          <AlertCircle className="w-3.5 h-3.5" />
-          Adjust goal weightages to total exactly 100% before submitting.
-        </p>
-      )}
+
+      {/* Footer Actions */}
+      <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row gap-3">
+        {totalWeight !== 100 && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 sm:flex-1">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            {totalWeight > 100 ? `Over by ${totalWeight - 100}% — reduce some weightages.` : `Need ${100 - totalWeight}% more — increase weightages to reach 100%.`}
+          </p>
+        )}
+        <div className="flex gap-3 sm:ml-auto">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => handleSave('draft')}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {isSubmitting ? 'Saving...' : 'Save Draft'}
+          </button>
+          <button
+            type="button"
+            disabled={isSubmitting || totalWeight !== 100}
+            onClick={() => handleSave('submitted')}
+            className="btn-primary flex items-center gap-2"
+            title={totalWeight !== 100 ? `Weightage must total 100% (currently ${totalWeight}%)` : ''}
+          >
+            <Send className="w-4 h-4" />
+            {isSubmitting ? 'Submitting...' : 'Submit to Manager'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
