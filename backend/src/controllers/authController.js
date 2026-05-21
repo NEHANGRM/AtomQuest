@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
 const generateToken = (id) => {
@@ -46,4 +47,30 @@ const getMe = async (req, res) => {
   res.json(req.user);
 };
 
-module.exports = { registerUser, loginUser, getMe };
+const seedDemoAccounts = async (req, res) => {
+  try {
+    const demoUsers = [
+      { name: 'System Admin', email: 'admin@test.com', password: 'password123', role: 'admin', department: 'IT' },
+      { name: 'Jane Manager', email: 'manager@test.com', password: 'password123', role: 'manager', department: 'Engineering' },
+      { name: 'John Employee', email: 'emp@test.com', password: 'password123', role: 'employee', department: 'Engineering' },
+    ];
+
+    const results = [];
+    for (const demo of demoUsers) {
+      const exists = await User.findOne({ email: demo.email });
+      if (!exists) {
+        const user = await User.create(demo);
+        results.push({ created: user.email });
+      } else {
+        results.push({ skipped: demo.email + ' (already exists)' });
+      }
+    }
+
+    res.json({ message: 'Demo accounts ready', results });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getMe, seedDemoAccounts };
+
