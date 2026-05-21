@@ -33,6 +33,7 @@ const ManagerDashboard = ({ activeNav }) => {
   const pendingCount = teamSheets.filter(s => s.status === 'submitted').length;
   const approvedCount = teamSheets.filter(s => s.status === 'approved').length;
   const activeSheets = teamSheets.filter(s => s.status === 'approved');
+  const rejectedCount = teamSheets.filter(s => s.status === 'rejected').length;
 
   // Compute Team Performance Trend from goal achievements
   const qScores = { Q1: [], Q2: [], Q3: [], Q4: [] };

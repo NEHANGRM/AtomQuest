@@ -147,6 +147,14 @@ const updateGoalSheetStatus = async (req, res) => {
         'warning',
         { entityModel: 'GoalSheet', entityId: sheet._id }
       );
+    } else if (status === 'rejected') {
+      await triggerNotification(
+        sheet.user,
+        'Goal Sheet Rejected',
+        `Your goal sheet has been rejected by ${req.user.name}. Reason: ${managerComments || 'None'}. Please create a new goal sheet.`,
+        'warning',
+        { entityModel: 'GoalSheet', entityId: sheet._id }
+      );
     }
 
     res.json(sheet);

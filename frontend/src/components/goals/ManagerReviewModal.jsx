@@ -31,8 +31,8 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
         return;
       }
     }
-    if (status === 'returned' && !comments) {
-      toast.error('Please provide comments when returning for rework.');
+    if ((status === 'returned' || status === 'rejected') && !comments) {
+      toast.error(`Please provide feedback comments when ${status === 'rejected' ? 'rejecting' : 'returning'} a goal sheet.`);
       return;
     }
 

@@ -117,12 +117,14 @@ const GoalCard = ({ goal, onLogUpdate }) => {
                 </div>
               )}
 
-              <button
-                onClick={() => onLogUpdate(goal)}
-                className="btn-primary py-1.5 text-xs"
-              >
-                <Activity className="w-3.5 h-3.5" /> Log Quarterly Update
-              </button>
+              {onLogUpdate && (
+                <button
+                  onClick={() => onLogUpdate(goal)}
+                  className="btn-primary py-1.5 text-xs"
+                >
+                  <Activity className="w-3.5 h-3.5" /> Log Quarterly Update
+                </button>
+              )}
             </div>
           </motion.div>
         )}
@@ -137,15 +139,16 @@ const GoalSheetCard = ({ sheet, onRefresh }) => {
   const progress = sheet.goals?.length
     ? Math.round(sheet.goals.reduce((s, g) => s + ((g.progressScore || 0) * (g.weightage / 100)), 0))
     : 0;
+  const isRejected = sheet.status === 'rejected';
 
   return (
-    <div className="card overflow-hidden">
+    <div className={`card overflow-hidden ${isRejected ? 'opacity-80' : ''}`}>
       <div
         className="flex items-center justify-between p-5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition"
         onClick={() => setExpanded(e => !e)}
       >
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center font-display font-bold text-lg">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-display font-bold text-lg ${isRejected ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' : 'bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400'}`}>
             {sheet.year?.slice(-2)}
           </div>
           <div>
@@ -167,7 +170,19 @@ const GoalSheetCard = ({ sheet, onRefresh }) => {
         </div>
       </div>
 
-      {sheet.managerComments && (
+      {/* Rejected banner */}
+      {isRejected && sheet.managerComments && (
+        <div className="mx-5 mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm">
+          <p className="font-semibold text-red-700 dark:text-red-400 mb-0.5 flex items-center gap-1.5">
+            <AlertCircle className="w-4 h-4" /> Goal Sheet Rejected
+          </p>
+          <p className="text-red-600 dark:text-red-400">{sheet.managerComments}</p>
+          <p className="text-xs text-red-500 dark:text-red-500 mt-1.5">Please create a new goal sheet to re-submit your goals.</p>
+        </div>
+      )}
+
+      {/* Returned (rework) banner */}
+      {sheet.status === 'returned' && sheet.managerComments && (
         <div className="mx-5 mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm">
           <p className="font-semibold text-amber-800 dark:text-amber-300 mb-0.5">Manager Feedback</p>
           <p className="text-amber-700 dark:text-amber-400">{sheet.managerComments}</p>
@@ -183,8 +198,13 @@ const GoalSheetCard = ({ sheet, onRefresh }) => {
             className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
           >
             <div className="p-5 space-y-3">
+              {isRejected && (
+                <div className="text-center py-4 text-sm text-slate-500 dark:text-slate-400 italic">
+                  This goal sheet was rejected. Goals are shown for reference only.
+                </div>
+              )}
               {sheet.goals?.length > 0 ? sheet.goals.map(goal => (
-                <GoalCard key={goal._id} goal={goal} onLogUpdate={setActiveUpdateGoal} />
+                <GoalCard key={goal._id} goal={goal} onLogUpdate={isRejected ? null : setActiveUpdateGoal} />
               )) : (
                 <div className="empty-state py-8">
                   <p className="text-sm text-slate-500 dark:text-slate-400">No goals in this sheet yet.</p>
@@ -205,6 +225,7 @@ const GoalSheetCard = ({ sheet, onRefresh }) => {
     </div>
   );
 };
+
 
 // ── Draft Editor ──────────────────────────────────────────────
 const DraftEditor = ({ sheet, onClose, onSaved }) => {
