@@ -15,7 +15,26 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.CLIENT_URL,
+    ].filter(Boolean);
+
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+
+    // Allow any vercel.app subdomain or exact matches
+    if (
+      allowedOrigins.includes(origin) ||
+      /\.vercel\.app$/.test(origin)
+    ) {
+      return callback(null, true);
+    }
+
+    callback(new Error('CORS not allowed for: ' + origin));
+  },
   credentials: true
 }));
 app.use(helmet());
