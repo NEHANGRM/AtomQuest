@@ -31,15 +31,20 @@ const EmployeeDashboard = ({ activeNav }) => {
   }, []);
 
   const totalGoals = goalSheets.reduce((acc, sheet) => acc + sheet.goals.length, 0);
-  const activeSheet = goalSheets.find(s => s.status === 'approved') || goalSheets[0];
-  
-  const overallProgress = activeSheet?.goals?.length 
-    ? Math.round(activeSheet.goals.reduce((sum, g) => sum + ((g.progressScore || 0) * (g.weightage / 100)), 0)) 
+  const activeSheetCount = goalSheets.filter(s => s.status !== 'draft').length;
+
+  // Aggregate ALL goals from ALL sheets (not just one sheet)
+  const allGoals = goalSheets.flatMap(sheet => sheet.goals || []);
+
+  // Weighted progress across all goals from all sheets
+  const totalWeight = allGoals.reduce((sum, g) => sum + (g.weightage || 0), 0);
+  const overallProgress = totalWeight > 0
+    ? Math.round(allGoals.reduce((sum, g) => sum + ((g.progressScore || 0) * ((g.weightage || 0) / totalWeight)), 0))
     : 0;
 
-  // Aggregate stats for progress page
+  // Aggregate stats for progress page - across ALL sheets
   const thrustAreasMap = {};
-  activeSheet?.goals?.forEach(g => {
+  allGoals.forEach(g => {
     const area = g.thrustArea || 'General';
     if (!thrustAreasMap[area]) {
       thrustAreasMap[area] = { sum: 0, count: 0, weight: 0 };
@@ -55,14 +60,14 @@ const EmployeeDashboard = ({ activeNav }) => {
     weight: thrustAreasMap[name].weight
   }));
 
-  const chartData = activeSheet?.goals?.map(g => ({
+  const chartData = allGoals.map(g => ({
     name: g.title.length > 20 ? g.title.substring(0, 20) + '...' : g.title,
     progress: g.progressScore || 0,
     weight: g.weightage || 0
-  })) || [];
+  }));
 
   const allAchievements = [];
-  activeSheet?.goals?.forEach(g => {
+  allGoals.forEach(g => {
     g.achievements?.forEach(a => {
       allAchievements.push({
         goalTitle: g.title,
@@ -92,11 +97,11 @@ const EmployeeDashboard = ({ activeNav }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="card p-6 flex items-center space-x-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg"><Target size={24} /></div>
-              <div><p className="text-sm text-slate-500 dark:text-slate-400 font-medium">My Goals</p><h3 className="text-2xl font-display font-bold text-slate-800 dark:text-white">{totalGoals}</h3></div>
+              <div><p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Goals</p><h3 className="text-2xl font-display font-bold text-slate-800 dark:text-white">{totalGoals}</h3></div>
             </div>
             <div className="card p-6 flex items-center space-x-4">
               <div className="p-3 bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 rounded-lg"><Flag size={24} /></div>
-              <div><p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Current Status</p><h3 className="text-lg font-display font-bold text-slate-800 dark:text-white capitalize">{activeSheet?.status || 'Draft'}</h3></div>
+              <div><p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Active Sheets</p><h3 className="text-2xl font-display font-bold text-slate-800 dark:text-white">{activeSheetCount}</h3></div>
             </div>
             <div className="card p-6 flex flex-col justify-center">
               <div className="flex justify-between items-center mb-3">
@@ -116,7 +121,7 @@ const EmployeeDashboard = ({ activeNav }) => {
 
           <div className="card p-6">
             <div className="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
-              <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-white">Quarterly Updates Needed</h3>
+              <h3 className="text-lg font-display font-semibold text-slate-800 dark:text-white">All My Goals</h3>
               <div className="flex space-x-3">
                 <button 
                   onClick={() => setShowCreateForm(!showCreateForm)}
@@ -141,7 +146,7 @@ const EmployeeDashboard = ({ activeNav }) => {
             </AnimatePresence>
 
             <div className="space-y-4">
-              {activeSheet?.goals?.length > 0 ? activeSheet.goals.map(goal => (
+              {allGoals.length > 0 ? allGoals.map(goal => (
                 <div key={goal._id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm">
                   <div className="mb-4 sm:mb-0">
                     <div className="flex items-center space-x-2">
@@ -191,14 +196,14 @@ const EmployeeDashboard = ({ activeNav }) => {
 
       {activeNav === 'progress' && (
         <>
-          {/* Key achievement metrics summary cards */}
+          {/* Key achievement metrics summary cards - aggregated across ALL sheets */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="card p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center space-x-4">
               <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded-xl"><CheckCircle2 size={22} /></div>
               <div>
                 <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Completed Goals</p>
                 <h4 className="text-xl font-bold text-slate-800 dark:text-white mt-0.5">
-                  {activeSheet?.goals?.filter(g => g.progressScore >= 100).length || 0}
+                  {allGoals.filter(g => g.progressScore >= 100).length}
                 </h4>
               </div>
             </div>
