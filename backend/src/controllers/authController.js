@@ -50,23 +50,20 @@ const getMe = async (req, res) => {
 const seedDemoAccounts = async (req, res) => {
   try {
     const demoUsers = [
-      { name: 'System Admin', email: 'admin@test.com', password: 'password123', role: 'admin', department: 'IT' },
-      { name: 'Jane Manager', email: 'manager@test.com', password: 'password123', role: 'manager', department: 'Engineering' },
+      { name: 'System Admin', email: 'admin@gmail.com', password: 'admin', role: 'admin', department: 'IT' },
+      { name: 'Jane Manager', email: 'manager@gmail.com', password: 'manager', role: 'manager', department: 'Engineering' },
       { name: 'John Employee', email: 'emp@test.com', password: 'password123', role: 'employee', department: 'Engineering' },
     ];
 
     const results = [];
     for (const demo of demoUsers) {
-      const exists = await User.findOne({ email: demo.email });
-      if (!exists) {
-        const user = await User.create(demo);
-        results.push({ created: user.email });
-      } else {
-        results.push({ skipped: demo.email + ' (already exists)' });
-      }
+      // Delete existing and recreate so password hash is fresh
+      await User.deleteOne({ email: demo.email });
+      const user = await User.create(demo);
+      results.push({ created: user.email, role: user.role });
     }
 
-    res.json({ message: 'Demo accounts ready', results });
+    res.json({ message: 'Demo accounts seeded successfully!', results });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

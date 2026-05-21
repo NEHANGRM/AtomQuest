@@ -7,7 +7,7 @@ router.post('/', protect, authorize('employee', 'manager'), createGoalSheet);
 router.put('/sheet/:id', protect, authorize('employee', 'manager'), updateGoalSheet);
 router.get('/my', protect, getMyGoalSheets);
 router.get('/team', protect, authorize('manager', 'admin'), getTeamGoalSheets);
-router.put('/sheet/:id/status', protect, authorize('manager', 'admin'), updateGoalSheetStatus);
+router.put('/sheet/:id/status', protect, updateGoalSheetStatus);
 router.post('/:id/achievement', protect, authorize('employee', 'manager'), updateAchievement);
 
 module.exports = router;
