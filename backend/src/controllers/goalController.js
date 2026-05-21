@@ -2,6 +2,20 @@ const Goal = require('../models/Goal');
 const GoalSheet = require('../models/GoalSheet');
 const AuditLog = require('../models/AuditLog');
 
+// Maps Q1/Q2/Q3/Q4/H1/H2/Full Year to a deadline date for the given year
+const deriveDeadlineFromTimeline = (timeline, year) => {
+  const map = {
+    'Q1': new Date(year, 6, 31),        // July 31 (Indian FY Q1)
+    'Q2': new Date(year, 9, 31),        // October 31
+    'Q3': new Date(year + 1, 0, 31),   // January 31
+    'Q4': new Date(year + 1, 2, 31),   // March 31
+    'H1': new Date(year, 9, 31),        // October 31
+    'H2': new Date(year + 1, 2, 31),   // March 31
+    'Full Year': new Date(year + 1, 2, 31),
+  };
+  return map[timeline] || new Date(year + 1, 2, 31);
+};
+
 const logAudit = async (userId, action, model, documentId, previousValue, newValue) => {
   await AuditLog.create({ user: userId, action, model, documentId, previousValue, newValue });
 };
@@ -28,7 +42,9 @@ const createGoalSheet = async (req, res) => {
     
     const createdGoals = [];
     for (const g of goals) {
-      const goal = await Goal.create({ ...g, user: req.user._id, goalSheet: goalSheet._id });
+      // Auto-derive deadline from timeline if not provided
+      const deadline = g.deadline || deriveDeadlineFromTimeline(g.timeline, Number(year));
+      const goal = await Goal.create({ ...g, deadline, user: req.user._id, goalSheet: goalSheet._id });
       createdGoals.push(goal._id);
     }
     

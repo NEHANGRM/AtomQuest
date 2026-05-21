@@ -10,7 +10,7 @@ const goalSchema = mongoose.Schema({
   direction: { type: String, enum: ['Higher', 'Lower'], default: 'Higher' },
   target: { type: Number, required: true },
   weightage: { type: Number, required: true, min: 10, max: 100 },
-  deadline: { type: Date, required: true },
+  deadline: { type: Date },
   status: { type: String, enum: ['Not Started', 'On Track', 'Completed'], default: 'Not Started' },
   isShared: { type: Boolean, default: false },
   sharedGoalId: { type: mongoose.Schema.Types.ObjectId, ref: 'SharedGoal', default: null },
