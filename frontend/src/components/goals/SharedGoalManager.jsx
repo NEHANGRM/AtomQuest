@@ -84,73 +84,73 @@ const SharedGoalManager = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="card p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center">
-            <Network className="w-6 h-6 mr-2 text-blue-600" /> Department KPIs (Shared Goals)
+          <h2 className="text-xl font-bold text-slate-850 dark:text-white flex items-center">
+            <Network className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-450" /> Department KPIs (Shared Goals)
           </h2>
-          <p className="text-sm text-gray-500 mt-1">Push top-down objectives to your team. Changes to targets sync automatically.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Push top-down objectives to your team. Changes to targets sync automatically.</p>
         </div>
         <button 
           onClick={() => setIsCreating(!isCreating)}
-          className="flex items-center px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-medium transition"
+          className="flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg font-medium transition"
         >
           {isCreating ? 'Cancel' : <><Plus size={18} className="mr-1"/> Create KPI</>}
         </button>
       </div>
 
       {isCreating && (
-        <div className="mb-8 p-5 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="mb-8 p-5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="lg:col-span-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Thrust Area</label>
-                <input {...register('thrustArea')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500" placeholder="e.g. Finance" />
+                <label className="label-text">Thrust Area</label>
+                <input {...register('thrustArea')} className="input-field py-2 px-3" placeholder="e.g. Finance" />
                 {errors.thrustArea && <p className="text-red-500 text-xs mt-1">{errors.thrustArea.message}</p>}
               </div>
               <div className="lg:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Goal Title</label>
-                <input {...register('title')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500" placeholder="e.g. Reduce Q2 operational costs by 10%" />
+                <label className="label-text">Goal Title</label>
+                <input {...register('title')} className="input-field py-2 px-3" placeholder="e.g. Reduce Q2 operational costs by 10%" />
                 {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
               </div>
               <div className="lg:col-span-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Timeline</label>
-                <select {...register('timeline')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 bg-white">
+                <label className="label-text">Timeline</label>
+                <select {...register('timeline')} className="input-field py-2 px-3">
                   <option value="H1">H1</option>
                   <option value="H2">H2</option>
                   <option value="Full Year">Full Year</option>
                 </select>
               </div>
               <div className="lg:col-span-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">UoM Type</label>
-                <select {...register('uomType')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 bg-white">
+                <label className="label-text">UoM Type</label>
+                <select {...register('uomType')} className="input-field py-2 px-3">
                   <option value="Numeric">Numeric</option>
                   <option value="Percentage">Percentage</option>
                 </select>
               </div>
               <div className="lg:col-span-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Optimization</label>
-                <select {...register('direction')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500 bg-white">
+                <label className="label-text">Optimization</label>
+                <select {...register('direction')} className="input-field py-2 px-3">
                   <option value="Higher">Higher is Better</option>
                   <option value="Lower">Lower is Better</option>
                 </select>
               </div>
               <div className="lg:col-span-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Target</label>
-                <input type="number" {...register('target', { valueAsNumber: true })} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500" />
+                <label className="label-text">Target</label>
+                <input type="number" {...register('target', { valueAsNumber: true })} className="input-field py-2 px-3" />
                 {errors.target && <p className="text-red-500 text-xs mt-1">{errors.target.message}</p>}
               </div>
               <div className="lg:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Description (Optional)</label>
-                <input {...register('description')} className="w-full text-sm border-gray-300 rounded-md p-2 border focus:ring-2 focus:ring-blue-500" placeholder="Details..." />
+                <label className="label-text">Description (Optional)</label>
+                <input {...register('description')} className="input-field py-2 px-3" placeholder="Details..." />
               </div>
             </div>
 
-            <div className="pt-2 border-t border-gray-200 mt-4">
-              <label className="block text-sm font-medium text-gray-800 mb-3 mt-2">Assign to Team Members</label>
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
+              <label className="label-text text-base">Assign to Team Members</label>
               {teamMembers.length === 0 ? (
-                <p className="text-sm text-gray-500 italic">No team members found. They may need to sign in first.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 italic">No team members found. They may need to sign in first.</p>
               ) : (
                 <div className="flex flex-wrap gap-3">
                   {teamMembers.map(member => (
@@ -158,7 +158,11 @@ const SharedGoalManager = () => {
                       key={member._id}
                       type="button"
                       onClick={() => toggleEmployeeSelection(member._id)}
-                      className={`flex items-center px-4 py-2 rounded-full border text-sm transition-all ${selectedEmployees.includes(member._id) ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                      className={`flex items-center px-4 py-2 rounded-full border text-sm transition-all ${
+                        selectedEmployees.includes(member._id) 
+                          ? 'bg-blue-600 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-500 shadow-md' 
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-700/60'
+                      }`}
                     >
                       {selectedEmployees.includes(member._id) ? <Check size={16} className="mr-2" /> : <Users size={16} className="mr-2" />}
                       {member.name}
@@ -169,7 +173,7 @@ const SharedGoalManager = () => {
             </div>
 
             <div className="flex justify-end pt-4">
-              <button disabled={isSubmitting} type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition">
+              <button disabled={isSubmitting} type="submit" className="btn-primary px-6 py-2">
                 {isSubmitting ? 'Pushing to Team...' : 'Create & Assign KPI'}
               </button>
             </div>
@@ -179,30 +183,32 @@ const SharedGoalManager = () => {
 
       <div className="space-y-4">
         {sharedGoals.length === 0 && !isCreating && (
-          <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <Target size={32} className="mx-auto text-gray-400 mb-2" />
-            <h3 className="text-gray-900 font-medium">No Department KPIs</h3>
-            <p className="text-sm text-gray-500">Create a shared goal to automatically distribute it to your team.</p>
+          <div className="empty-state py-8">
+            <div className="empty-state-icon mb-2">
+              <Target size={24} className="text-slate-400 dark:text-slate-500" />
+            </div>
+            <h3 className="text-slate-900 dark:text-white font-medium text-base">No Department KPIs</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mt-1">Create a shared goal to automatically distribute it to your team.</p>
           </div>
         )}
         {sharedGoals.map(sg => (
-          <div key={sg._id} className="p-5 border border-gray-200 rounded-xl hover:shadow-sm transition bg-white">
+          <div key={sg._id} className="card p-5 hover:shadow-md">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h4 className="font-bold text-gray-900 text-lg">{sg.title}</h4>
-                <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
-                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">{sg.thrustArea}</span>
-                  <span>Target: <strong>{sg.target} {sg.uomType}</strong></span>
-                  <span>Timeline: <strong>{sg.timeline}</strong></span>
+                <h4 className="font-bold text-slate-800 dark:text-white text-lg">{sg.title}</h4>
+                <div className="flex items-center space-x-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded font-medium">{sg.thrustArea}</span>
+                  <span>Target: <strong className="text-slate-700 dark:text-slate-350">{sg.target} {sg.uomType}</strong></span>
+                  <span>Timeline: <strong className="text-slate-700 dark:text-slate-350">{sg.timeline}</strong></span>
                 </div>
               </div>
-              <button className="text-gray-400 hover:text-blue-600 transition"><Edit2 size={18} /></button>
+              <button className="text-gray-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 transition"><Edit2 size={18} /></button>
             </div>
-            <div className="mt-4 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wide">Assigned To ({sg.assignedTo.length})</p>
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium uppercase tracking-wide">Assigned To ({sg.assignedTo.length})</p>
               <div className="flex flex-wrap gap-2">
                 {sg.assignedTo.map(emp => (
-                  <span key={emp._id} className="text-xs font-medium bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md">
+                  <span key={emp._id} className="text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-350 px-2.5 py-1 rounded-md border border-slate-200/50 dark:border-slate-750">
                     {emp.name}
                   </span>
                 ))}
