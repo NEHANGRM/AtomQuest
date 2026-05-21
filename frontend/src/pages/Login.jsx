@@ -17,7 +17,7 @@ const Login = () => {
     try {
       await login(email, password);
       toast.success('Logged in successfully');
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     }
@@ -46,7 +46,7 @@ const Login = () => {
       await login(ssoEmail, ssoPassword);
       toast.success('Microsoft Entra ID SSO Authentication Successful!');
       setShowMicrosoftSSO(false);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Microsoft Sign-in Failed');
     } finally {

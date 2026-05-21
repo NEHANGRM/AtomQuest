@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Target, Activity,
   Users, Menu, Bell, Moon, Sun, X, ChevronRight,
-  Settings, FileText, TrendingUp, RefreshCw
+  Settings, FileText, TrendingUp, RefreshCw, Shield
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
@@ -31,10 +31,11 @@ const NAV_CONFIG = {
     { key: 'reports', label: 'Reports', icon: FileText },
   ],
   admin: [
-    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { key: 'dashboard', label: 'Org Overview', icon: LayoutDashboard },
+    { key: 'sheets', label: 'Goal Sheets', icon: Target },
     { key: 'team', label: 'User Management', icon: Users },
-    { key: 'reports', label: 'Reports & Analytics', icon: TrendingUp },
-    { key: 'audit', label: 'System Logs', icon: Activity },
+    { key: 'audit', label: 'Security & Audit', icon: Shield },
+    { key: 'reports', label: 'Export Reports', icon: FileText },
   ],
 };
 
@@ -126,8 +127,8 @@ const Dashboard = () => {
     // For all other nav items, render the role dashboard
     switch (user?.role) {
       case 'admin':   return <AdminDashboard activeNav={activeNav} setActiveNav={setActiveNav} />;
-      case 'manager': return <ManagerDashboard />;
-      default:        return <EmployeeDashboard />;
+      case 'manager': return <ManagerDashboard activeNav={activeNav} />;
+      default:        return <EmployeeDashboard activeNav={activeNav} />;
     }
   };
 

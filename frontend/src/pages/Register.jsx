@@ -16,7 +16,7 @@ const Register = () => {
       // Defaults to 'employee' role as per AuthContext
       await registerUser(name, email, password);
       toast.success('Account created successfully');
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
     }

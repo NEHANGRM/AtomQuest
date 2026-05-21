@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import LandingPage from './pages/LandingPage';
 import { Toaster } from 'sonner';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -18,7 +19,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     </div>
   );
   if (!user) return <Navigate to="/login" />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/dashboard" />;
   return children;
 };
 
@@ -28,9 +29,10 @@ const App = () => {
       <AuthProvider>
         <Router>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>

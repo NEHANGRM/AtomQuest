@@ -6,7 +6,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell
 } from 'recharts';
 import { 
-  Users, Activity, Unlock, Database, Shield, LayoutDashboard, Search, Plus, Edit2, Trash2, CheckCircle, RefreshCcw, Download
+  Users, Activity, Unlock, Database, Shield, LayoutDashboard, Search, Plus, Edit2, Trash2, CheckCircle, RefreshCcw, Download, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReportingModule from './ReportingModule';
@@ -14,7 +14,6 @@ import { useTheme } from '../../context/ThemeContext';
 
 const AdminDashboard = ({ activeNav, setActiveNav }) => {
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState('overview'); // overview, users, sheets, audit, reporting
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
@@ -23,45 +22,100 @@ const AdminDashboard = ({ activeNav, setActiveNav }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  // Derive activeTab from activeNav prop
   const getTabFromNav = (nav) => {
     switch (nav) {
       case 'dashboard': return 'overview';
+      case 'sheets': return 'sheets';
       case 'team': return 'users';
       case 'reports': return 'reporting';
       case 'audit': return 'audit';
       default: return 'overview';
     }
   };
+  const activeTab = getTabFromNav(activeNav);
 
-  const getNavFromTab = (tab) => {
-    switch (tab) {
-      case 'overview': return 'dashboard';
-      case 'users': return 'team';
-      case 'reporting': return 'reports';
-      case 'audit': return 'audit';
-      default: return 'dashboard';
+  // CRUD States
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [userModalMode, setUserModalMode] = useState('create'); // 'create' | 'edit'
+  const [editingUser, setEditingUser] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'employee',
+    department: '',
+    managerId: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleOpenCreateModal = () => {
+    setUserModalMode('create');
+    setEditingUser(null);
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      role: 'employee',
+      department: '',
+      managerId: ''
+    });
+    setIsUserModalOpen(true);
+  };
+
+  const handleOpenEditModal = (user) => {
+    setUserModalMode('edit');
+    setEditingUser(user);
+    setFormData({
+      name: user.name || '',
+      email: user.email || '',
+      password: '', // Not editable
+      role: user.role || 'employee',
+      department: user.department || '',
+      managerId: user.managerId?._id || user.managerId || ''
+    });
+    setIsUserModalOpen(true);
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    if (window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+      try {
+        setIsActionLoading(true);
+        await api.delete(`/api/admin/users/${userId}`);
+        toast.success(`User "${userName}" deleted successfully.`);
+        fetchUsers();
+        fetchStats();
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to delete user');
+      } finally {
+        setIsActionLoading(false);
+      }
     }
   };
 
-  useEffect(() => {
-    if (activeNav) {
-      const mappedTab = getTabFromNav(activeNav);
-      if (activeNav === 'dashboard' && activeTab === 'sheets') {
-        // Keep sheets sub-tab
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setIsSubmitting(true);
+      if (userModalMode === 'create') {
+        await api.post('/api/admin/users', formData);
+        toast.success('User created successfully.');
       } else {
-        setActiveTab(mappedTab);
+        await api.put(`/api/admin/users/${editingUser._id}`, {
+          name: formData.name,
+          role: formData.role,
+          department: formData.department,
+          managerId: formData.managerId || null
+        });
+        toast.success('User updated successfully.');
       }
-    }
-  }, [activeNav]);
-
-  const changeTab = (tab) => {
-    setActiveTab(tab);
-    if (setActiveNav) {
-      if (tab === 'sheets') {
-        setActiveNav('dashboard');
-      } else {
-        setActiveNav(getNavFromTab(tab));
-      }
+      setIsUserModalOpen(false);
+      fetchUsers();
+      fetchStats();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -165,24 +219,6 @@ const AdminDashboard = ({ activeNav, setActiveNav }) => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      {/* Top Navigation */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-soft border border-slate-200 dark:border-slate-800 p-2 flex flex-wrap gap-2">
-        <button onClick={() => changeTab('overview')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'overview' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
-          <LayoutDashboard size={16} className="mr-2" /> Org Overview
-        </button>
-        <button onClick={() => changeTab('sheets')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'sheets' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
-          <Activity size={16} className="mr-2" /> Goal Sheets
-        </button>
-        <button onClick={() => changeTab('users')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'users' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
-          <Users size={16} className="mr-2" /> User Management
-        </button>
-        <button onClick={() => changeTab('audit')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'audit' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
-          <Shield size={16} className="mr-2" /> Security & Audit
-        </button>
-        <button onClick={() => changeTab('reporting')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'reporting' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
-          <Download size={16} className="mr-2" /> Export Reports
-        </button>
-      </div>
 
       {isLoading && activeTab === 'overview' && (
         <div className="animate-fade-in space-y-6">
@@ -348,7 +384,10 @@ const AdminDashboard = ({ activeNav, setActiveNav }) => {
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">User Management</h3>
               <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Manage employee access, roles, and reporting hierarchies.</p>
             </div>
-            <button className="flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-650 text-white text-sm font-medium rounded-lg shadow-sm transition">
+            <button 
+              onClick={handleOpenCreateModal}
+              className="flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-650 text-white text-sm font-medium rounded-lg shadow-sm transition"
+            >
               <Plus size={16} className="mr-2" /> New User
             </button>
           </div>
@@ -371,16 +410,26 @@ const AdminDashboard = ({ activeNav, setActiveNav }) => {
                     <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{user.email}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider ${
-                        user.role === 'admin' ? 'bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400' :
+                        user.role === 'admin' ? 'bg-rose-100 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400' :
                         user.role === 'manager' ? 'bg-brand-100 dark:bg-brand-950/30 text-brand-700 dark:text-brand-400' :
-                        'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-350'
+                        'bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400'
                       }`}>{user.role}</span>
                     </td>
                     <td className="px-6 py-4 text-gray-600 dark:text-slate-350">{user.department || 'N/A'}</td>
                     <td className="px-6 py-4 text-gray-600 dark:text-slate-350">{user.managerId?.name || '-'}</td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <button className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-450 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded transition"><Edit2 size={16} /></button>
-                      <button className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition"><Trash2 size={16} /></button>
+                      <button 
+                        onClick={() => handleOpenEditModal(user)}
+                        className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-450 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded transition"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(user._id, user.name)}
+                        className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-red-655 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -487,6 +536,128 @@ const AdminDashboard = ({ activeNav, setActiveNav }) => {
       {/* REPORTING TAB */}
       {activeTab === 'reporting' && (
         <ReportingModule />
+      )}
+
+      {/* User Create/Edit Modal */}
+      {isUserModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-md w-full overflow-hidden animate-fade-in">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                {userModalMode === 'create' ? 'Create New User' : 'Edit User Info'}
+              </h3>
+              <button 
+                onClick={() => setIsUserModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-205 hover:bg-slate-100 dark:hover:bg-slate-800 p-1 rounded-lg transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Full Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g. Jane Doe"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-905 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-505 dark:text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
+                <input 
+                  type="email" 
+                  required
+                  disabled={userModalMode === 'edit'}
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="e.g. jane.doe@company.com"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-905 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              {userModalMode === 'create' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-505 dark:text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={formData.password}
+                    onChange={e => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Minimum 6 characters"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-905 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition"
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-505 dark:text-slate-400 uppercase tracking-wider mb-1.5">Role</label>
+                  <select
+                    value={formData.role}
+                    onChange={e => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-905 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition"
+                  >
+                    <option value="employee">Employee</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-505 dark:text-slate-400 uppercase tracking-wider mb-1.5">Department</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.department}
+                    onChange={e => setFormData({ ...formData, department: e.target.value })}
+                    placeholder="e.g. Sales"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-905 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-505 dark:text-slate-405 uppercase tracking-wider mb-1.5">Reporting Manager</label>
+                <select
+                  value={formData.managerId}
+                  onChange={e => setFormData({ ...formData, managerId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-905 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition"
+                >
+                  <option value="">None (Individual Contributor / Top Level)</option>
+                  {users
+                    .filter(u => (u.role === 'manager' || u.role === 'admin') && u._id !== editingUser?._id)
+                    .map(manager => (
+                      <option key={manager._id} value={manager._id}>
+                        {manager.name} ({manager.department || 'No Dept'})
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsUserModalOpen(false)}
+                  className="px-4 py-2 border border-slate-250 dark:border-slate-700 text-slate-750 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-650 text-white rounded-xl text-sm font-semibold transition flex items-center"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    'Save User'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </motion.div>
