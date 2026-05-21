@@ -2,6 +2,7 @@ const CheckIn = require('../models/CheckIn');
 const Goal = require('../models/Goal');
 const AuditLog = require('../models/AuditLog');
 const { calculateProgress } = require('../utils/calculationEngine');
+const { triggerNotification } = require('../utils/notifications');
 
 const logAudit = async (userId, action, model, documentId, previousValue, newValue) => {
   await AuditLog.create({ user: userId, action, model, documentId, previousValue, newValue });
@@ -53,6 +54,16 @@ const createCheckIn = async (req, res) => {
     await goal.save();
     await logAudit(req.user._id, `QUARTERLY_CHECKIN_${quarter}`, 'Goal', goal._id, { status: previousStatus }, { status, progressScore, checkInId: checkIn._id });
 
+    if (req.user.managerId) {
+      await triggerNotification(
+        req.user.managerId,
+        'Goal Achievement Logged',
+        `${req.user.name} logged an achievement of ${actualValue} for ${quarter} on goal "${goal.title}".`,
+        'info',
+        { entityModel: 'CheckIn', entityId: checkIn._id }
+      );
+    }
+
     res.status(201).json(checkIn);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -89,6 +100,14 @@ const addManagerFeedback = async (req, res) => {
     await checkIn.save();
 
     await logAudit(req.user._id, `MANAGER_FEEDBACK_${checkIn.quarter}`, 'CheckIn', checkIn._id, null, { managerComment });
+
+    await triggerNotification(
+      checkIn.user, // the employee
+      'Check-In Feedback Received',
+      `Your manager ${req.user.name} added feedback to your ${checkIn.quarter} check-in on goal "${checkIn.goal.title}".`,
+      'success',
+      { entityModel: 'CheckIn', entityId: checkIn._id }
+    );
 
     res.json(checkIn);
   } catch (error) {

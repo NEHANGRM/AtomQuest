@@ -1,18 +1,21 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Target, Activity,
   Users, Menu, Bell, Moon, Sun, X, ChevronRight,
-  Settings, FileText, TrendingUp
+  Settings, FileText, TrendingUp, RefreshCw
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
+import { toast } from 'sonner';
 
 import AdminDashboard from '../components/dashboards/AdminDashboard';
 import ManagerDashboard from '../components/dashboards/ManagerDashboard';
 import EmployeeDashboard from '../components/dashboards/EmployeeDashboard';
 import GoalsPage from '../components/goals/GoalsPage';
+import ProfilePage from '../components/common/ProfilePage';
 
 // Navigation config per role
 const NAV_CONFIG = {
@@ -36,11 +39,78 @@ const NAV_CONFIG = {
 };
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, login, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('dashboard');
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [isSwitching, setIsSwitching] = useState(false);
+
+  const handleRoleSwitch = async (email, password) => {
+    try {
+      setIsSwitching(true);
+      await login(email, password);
+      setActiveNav('dashboard');
+      toast.success('Successfully switched persona');
+    } catch (err) {
+      toast.error('Failed to switch persona');
+      console.error(err);
+    } finally {
+      setIsSwitching(false);
+    }
+  };
+
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Just now';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const { data } = await api.get('/api/notifications');
+      setNotifications(data);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      // Poll every 15 seconds for live notifications
+      const interval = setInterval(fetchNotifications, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.put('/api/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark all notifications read', err);
+    }
+  };
+
+  const handleMarkOneRead = async (id) => {
+    try {
+      await api.put(`/api/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error('Failed to mark notification read', err);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -51,16 +121,20 @@ const Dashboard = () => {
 
   const renderContent = () => {
     if (activeNav === 'goals') return <GoalsPage />;
+    if (activeNav === 'profile') return <ProfilePage />;
 
     // For all other nav items, render the role dashboard
     switch (user?.role) {
-      case 'admin':   return <AdminDashboard />;
+      case 'admin':   return <AdminDashboard activeNav={activeNav} setActiveNav={setActiveNav} />;
       case 'manager': return <ManagerDashboard />;
       default:        return <EmployeeDashboard />;
     }
   };
 
-  const getNavLabel = () => navItems.find(n => n.key === activeNav)?.label || 'Dashboard';
+  const getNavLabel = () => {
+    if (activeNav === 'profile') return 'My Profile Settings';
+    return navItems.find(n => n.key === activeNav)?.label || 'Dashboard';
+  };
 
   const roleConfig = {
     admin:    { badge: 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-300 dark:border-rose-800', dot: 'bg-rose-500' },
@@ -98,6 +172,35 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Demo Persona Switcher */}
+      <div className="px-4 pt-3">
+        <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 p-2.5">
+          <div className="flex items-center space-x-1.5 mb-2 px-1">
+            <RefreshCw className={`w-3.5 h-3.5 text-brand-600 dark:text-brand-400 ${isSwitching ? 'animate-spin' : ''}`} />
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Demo Switcher
+            </span>
+          </div>
+          <div className="relative">
+            <select
+              value={user?.email || ''}
+              disabled={isSwitching}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'admin@gmail.com') handleRoleSwitch('admin@gmail.com', 'admin');
+                else if (val === 'manager@gmail.com') handleRoleSwitch('manager@gmail.com', 'manager');
+                else if (val === 'demouser@gmail.com') handleRoleSwitch('demouser@gmail.com', 'user');
+              }}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 py-1.5 px-2 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 cursor-pointer disabled:opacity-50"
+            >
+              <option value="admin@gmail.com">System Admin (Admin)</option>
+              <option value="manager@gmail.com">Jane Manager (Manager)</option>
+              <option value="demouser@gmail.com">Demo User (Employee)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Nav */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest mb-3 mt-2">Navigation</p>
@@ -125,15 +228,18 @@ const Dashboard = () => {
 
       {/* User info */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
-        <div className="flex items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
-          <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white font-display font-bold text-base flex-shrink-0 shadow-glow">
+        <button
+          onClick={() => { setActiveNav('profile'); setIsSidebarOpen(false); }}
+          className="w-full flex items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 text-left hover:border-brand-500 dark:hover:border-brand-500 transition-all group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white font-display font-bold text-base flex-shrink-0 shadow-glow group-hover:scale-105 transition-transform">
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="ml-3 min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user?.name}</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{user?.name}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate capitalize">{user?.email}</p>
           </div>
-        </div>
+        </button>
       </div>
     </>
   );
@@ -185,6 +291,33 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center space-x-1">
+            {/* Demo Persona Switcher (Header) */}
+            <div className="hidden sm:flex items-center space-x-2 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 mr-2">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                Demo Switcher
+              </span>
+              <div className="relative flex items-center">
+                <select
+                  value={user?.email || ''}
+                  disabled={isSwitching}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'admin@gmail.com') handleRoleSwitch('admin@gmail.com', 'admin');
+                    else if (val === 'manager@gmail.com') handleRoleSwitch('manager@gmail.com', 'manager');
+                    else if (val === 'demouser@gmail.com') handleRoleSwitch('demouser@gmail.com', 'user');
+                  }}
+                  className="bg-transparent border-0 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:ring-0 cursor-pointer py-0 pl-1 pr-6"
+                >
+                  <option value="admin@gmail.com" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Admin</option>
+                  <option value="manager@gmail.com" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Manager</option>
+                  <option value="demouser@gmail.com" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Employee</option>
+                </select>
+                {isSwitching && (
+                  <RefreshCw className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400 animate-spin absolute right-0 pointer-events-none" />
+                )}
+              </div>
+            </div>
+
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
@@ -192,21 +325,73 @@ const Dashboard = () => {
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <button className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full ring-2 ring-white dark:ring-slate-900" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition relative"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.some(n => !n.read) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full ring-2 ring-white dark:ring-slate-900" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {isNotificationsOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setIsNotificationsOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden z-30"
+                    >
+                      <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-55/50 dark:bg-slate-900/50 flex justify-between items-center">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">Notifications</span>
+                        <button
+                          onClick={handleMarkAllRead}
+                          className="text-xs text-brand-600 dark:text-brand-400 hover:underline"
+                        >
+                          Mark all read
+                        </button>
+                      </div>
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-64 overflow-y-auto">
+                        {notifications.map(n => (
+                          <button
+                            key={n._id}
+                            onClick={() => handleMarkOneRead(n._id)}
+                            className={`w-full p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors text-left block focus:outline-none ${!n.read ? 'bg-brand-50/20 dark:bg-brand-950/10' : ''}`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <p className={`text-xs text-slate-800 dark:text-slate-200 ${!n.read ? 'font-bold' : 'font-medium'}`}>{n.title}</p>
+                              <span className="text-[10px] text-slate-400 font-mono ml-2 flex-shrink-0">{formatTimeAgo(n.createdAt)}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{n.message}</p>
+                          </button>
+                        ))}
+                        {notifications.length === 0 && (
+                          <div className="p-8 text-center text-slate-400 text-xs">No notifications.</div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
 
-            <div className="flex items-center space-x-2 pl-1">
+            <button
+              onClick={() => setActiveNav('profile')}
+              className="flex items-center space-x-2 pl-1 hover:opacity-80 transition focus:outline-none"
+            >
               <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-sm shadow-glow">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-300 max-w-[120px] truncate">
                 {user?.name}
               </span>
-            </div>
+            </button>
 
             <button
               onClick={handleLogout}

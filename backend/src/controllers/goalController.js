@@ -1,6 +1,8 @@
 const Goal = require('../models/Goal');
 const GoalSheet = require('../models/GoalSheet');
 const AuditLog = require('../models/AuditLog');
+const User = require('../models/User');
+const { triggerNotification } = require('../utils/notifications');
 
 // Maps Q1/Q2/Q3/Q4/H1/H2/Full Year to a deadline date for the given year
 const deriveDeadlineFromTimeline = (timeline, year) => {
@@ -53,6 +55,16 @@ const createGoalSheet = async (req, res) => {
 
     await logAudit(req.user._id, 'CREATE_GOAL_SHEET', 'GoalSheet', goalSheet._id, null, goalSheet);
 
+    if (status === 'submitted' && req.user.managerId) {
+      await triggerNotification(
+        req.user.managerId,
+        'Goal Sheet Submitted',
+        `${req.user.name} has submitted their Goal Sheet for review.`,
+        'action_required',
+        { entityModel: 'GoalSheet', entityId: goalSheet._id }
+      );
+    }
+
     res.status(201).json(goalSheet);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -99,6 +111,9 @@ const updateGoalSheetStatus = async (req, res) => {
     if (goals && Array.isArray(goals) && goals.length > 0) {
       const totalWeightage = goals.reduce((acc, goal) => acc + Number(goal.weightage || 0), 0);
       if (totalWeightage !== 100) return res.status(400).json({ message: 'Total weightage must be exactly 100%.' });
+      if (goals.some(g => Number(g.weightage || 0) < 10)) {
+        return res.status(400).json({ message: 'Minimum weightage per goal is 10%.' });
+      }
       
       await Goal.deleteMany({ _id: { $in: sheet.goals } });
       const createdGoals = [];
@@ -115,6 +130,24 @@ const updateGoalSheetStatus = async (req, res) => {
     await sheet.save();
 
     await logAudit(req.user._id, `MANAGER_REVIEW_${status.toUpperCase()}`, 'GoalSheet', sheet._id, { status: previousStatus }, { status, managerComments });
+
+    if (status === 'approved') {
+      await triggerNotification(
+        sheet.user,
+        'Goal Sheet Approved',
+        `Your goal sheet has been approved by your manager ${req.user.name}.`,
+        'success',
+        { entityModel: 'GoalSheet', entityId: sheet._id }
+      );
+    } else if (status === 'returned') {
+      await triggerNotification(
+        sheet.user,
+        'Goal Sheet Returned',
+        `Your goal sheet has been returned for rework by ${req.user.name}. Comments: ${managerComments || 'None'}`,
+        'warning',
+        { entityModel: 'GoalSheet', entityId: sheet._id }
+      );
+    }
 
     res.json(sheet);
   } catch (error) {
@@ -194,6 +227,17 @@ const updateGoalSheet = async (req, res) => {
     await sheet.save();
 
     await logAudit(req.user._id, 'UPDATE_GOAL_SHEET', 'GoalSheet', sheet._id, null, sheet);
+
+    if (status === 'submitted' && req.user.managerId) {
+      await triggerNotification(
+        req.user.managerId,
+        'Goal Sheet Submitted',
+        `${req.user.name} has submitted their Goal Sheet for review.`,
+        'action_required',
+        { entityModel: 'GoalSheet', entityId: sheet._id }
+      );
+    }
+
     res.json(sheet);
   } catch (error) {
     res.status(500).json({ message: error.message });

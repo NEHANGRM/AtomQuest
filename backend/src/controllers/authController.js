@@ -52,10 +52,13 @@ const seedDemoAccounts = async (req, res) => {
     const demoUsers = [
       { name: 'System Admin', email: 'admin@gmail.com', password: 'admin', role: 'admin', department: 'IT' },
       { name: 'Jane Manager', email: 'manager@gmail.com', password: 'manager', role: 'manager', department: 'Engineering' },
-      { name: 'John Employee', email: 'emp@test.com', password: 'password123', role: 'employee', department: 'Engineering' },
+      { name: 'Demo User', email: 'demouser@gmail.com', password: 'user', role: 'employee', department: 'Engineering' },
     ];
 
     const results = [];
+    // Ensure clean cleanup of old employee account
+    await User.deleteOne({ email: 'emp@test.com' });
+
     for (const demo of demoUsers) {
       // Delete existing and recreate so password hash is fresh
       await User.deleteOne({ email: demo.email });
@@ -69,5 +72,34 @@ const seedDemoAccounts = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getMe, seedDemoAccounts };
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.email = req.body.email || user.email;
+      
+      if (req.body.password) {
+        user.password = req.body.password;
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        token: generateToken(updatedUser._id)
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getMe, seedDemoAccounts, updateUserProfile };
 

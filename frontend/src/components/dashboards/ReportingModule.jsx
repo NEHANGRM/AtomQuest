@@ -47,9 +47,9 @@ const ReportingModule = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <div className="bg-gradient-to-r from-indigo-800 to-blue-900 rounded-xl shadow-lg p-8 text-white">
+      <div className="bg-gradient-to-r from-brand-800 to-brand-950 rounded-xl shadow-lg p-8 text-white">
         <h2 className="text-2xl font-bold mb-2 flex items-center"><Download className="mr-3" /> Reporting & Data Export</h2>
-        <p className="text-indigo-100 max-w-2xl">Generate comprehensive system reports, including goal completion metrics and quarterly achievement ledgers. Export directly to CSV or structured Excel formats for HR presentations.</p>
+        <p className="text-brand-100 max-w-2xl">Generate comprehensive system reports, including goal completion metrics and quarterly achievement ledgers. Export directly to CSV or structured Excel formats for HR presentations.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -57,7 +57,7 @@ const ReportingModule = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-lg font-bold text-gray-900 flex items-center">
-              <CheckCircle size={18} className="mr-2 text-green-600" /> Goal Completion Report
+              <CheckCircle size={18} className="mr-2 text-emerald-600" /> Goal Completion Report
             </h3>
             <p className="text-xs text-gray-500 mt-1">Extract performance metrics, weightages, and completion scores for all employee goals.</p>
           </div>
@@ -65,7 +65,7 @@ const ReportingModule = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center"><Filter size={12} className="mr-1"/> Department</label>
-                <select value={gcDepartment} onChange={(e) => setGcDepartment(e.target.value)} className="w-full border-gray-300 rounded-md p-2 text-sm border focus:ring-2 focus:ring-indigo-500 outline-none">
+                <select value={gcDepartment} onChange={(e) => setGcDepartment(e.target.value)} className="w-full border-gray-300 rounded-md p-2 text-sm border focus:ring-2 focus:ring-brand-500 outline-none">
                   <option value="All">All Departments</option>
                   <option value="Engineering">Engineering</option>
                   <option value="Sales">Sales</option>
@@ -75,7 +75,7 @@ const ReportingModule = () => {
               </div>
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center"><Filter size={12} className="mr-1"/> Performance Year</label>
-                <select value={gcYear} onChange={(e) => setGcYear(e.target.value)} className="w-full border-gray-300 rounded-md p-2 text-sm border focus:ring-2 focus:ring-indigo-500 outline-none">
+                <select value={gcYear} onChange={(e) => setGcYear(e.target.value)} className="w-full border-gray-300 rounded-md p-2 text-sm border focus:ring-2 focus:ring-brand-500 outline-none">
                   <option value="2026">2026</option>
                   <option value="2025">2025</option>
                 </select>
@@ -85,14 +85,14 @@ const ReportingModule = () => {
               <button 
                 disabled={isDownloading}
                 onClick={() => handleDownload('goal-completion', 'csv', { department: gcDepartment, year: gcYear })}
-                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-indigo-600 text-sm font-medium rounded-lg shadow-sm transition disabled:opacity-50"
+                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-brand-600 text-sm font-medium rounded-lg shadow-sm transition disabled:opacity-50"
               >
                 <FileText size={16} className="mr-2 text-gray-400" /> Download CSV
               </button>
               <button 
                 disabled={isDownloading}
                 onClick={() => handleDownload('goal-completion', 'excel', { department: gcDepartment, year: gcYear })}
-                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium rounded-lg shadow-md transition disabled:opacity-50"
+                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-brand-600 text-white hover:bg-brand-700 text-sm font-medium rounded-lg shadow-md transition disabled:opacity-50"
               >
                 <FileSpreadsheet size={16} className="mr-2" /> Download Excel
               </button>
@@ -104,7 +104,7 @@ const ReportingModule = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-lg font-bold text-gray-900 flex items-center">
-              <FileSpreadsheet size={18} className="mr-2 text-blue-600" /> Quarterly Check-Ins Ledger
+              <FileSpreadsheet size={18} className="mr-2 text-brand-600" /> Quarterly Check-Ins Ledger
             </h3>
             <p className="text-xs text-gray-500 mt-1">Extract historical logs of employee check-ins, actual values achieved, and manager feedback.</p>
           </div>
@@ -112,7 +112,7 @@ const ReportingModule = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center"><Filter size={12} className="mr-1"/> Target Quarter</label>
-                <select value={qaQuarter} onChange={(e) => setQaQuarter(e.target.value)} className="w-full border-gray-300 rounded-md p-2 text-sm border focus:ring-2 focus:ring-indigo-500 outline-none">
+                <select value={qaQuarter} onChange={(e) => setQaQuarter(e.target.value)} className="w-full border-gray-300 rounded-md p-2 text-sm border focus:ring-2 focus:ring-brand-500 outline-none">
                   <option value="All">All Quarters (YTD)</option>
                   <option value="Q1">Q1 Update</option>
                   <option value="Q2">Q2 Update</option>
@@ -125,14 +125,14 @@ const ReportingModule = () => {
               <button 
                 disabled={isDownloading}
                 onClick={() => handleDownload('quarterly', 'csv', { quarter: qaQuarter })}
-                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-indigo-600 text-sm font-medium rounded-lg shadow-sm transition disabled:opacity-50"
+                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-brand-600 text-sm font-medium rounded-lg shadow-sm transition disabled:opacity-50"
               >
                 <FileText size={16} className="mr-2 text-gray-400" /> Download CSV
               </button>
               <button 
                 disabled={isDownloading}
                 onClick={() => handleDownload('quarterly', 'excel', { quarter: qaQuarter })}
-                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium rounded-lg shadow-md transition disabled:opacity-50"
+                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-brand-600 text-white hover:bg-brand-700 text-sm font-medium rounded-lg shadow-md transition disabled:opacity-50"
               >
                 <FileSpreadsheet size={16} className="mr-2" /> Download Excel
               </button>

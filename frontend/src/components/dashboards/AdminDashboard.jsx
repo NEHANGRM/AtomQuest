@@ -11,8 +11,8 @@ import {
 import { toast } from 'sonner';
 import ReportingModule from './ReportingModule';
 
-const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview'); // overview, users, sheets, audit
+const AdminDashboard = ({ activeNav, setActiveNav }) => {
+  const [activeTab, setActiveTab] = useState('overview'); // overview, users, sheets, audit, reporting
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
@@ -20,6 +20,48 @@ const AdminDashboard = () => {
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
+
+  const getTabFromNav = (nav) => {
+    switch (nav) {
+      case 'dashboard': return 'overview';
+      case 'team': return 'users';
+      case 'reports': return 'reporting';
+      case 'audit': return 'audit';
+      default: return 'overview';
+    }
+  };
+
+  const getNavFromTab = (tab) => {
+    switch (tab) {
+      case 'overview': return 'dashboard';
+      case 'users': return 'team';
+      case 'reporting': return 'reports';
+      case 'audit': return 'audit';
+      default: return 'dashboard';
+    }
+  };
+
+  useEffect(() => {
+    if (activeNav) {
+      const mappedTab = getTabFromNav(activeNav);
+      if (activeNav === 'dashboard' && activeTab === 'sheets') {
+        // Keep sheets sub-tab
+      } else {
+        setActiveTab(mappedTab);
+      }
+    }
+  }, [activeNav]);
+
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    if (setActiveNav) {
+      if (tab === 'sheets') {
+        setActiveNav('dashboard');
+      } else {
+        setActiveNav(getNavFromTab(tab));
+      }
+    }
+  };
 
   // Audit Filters
   const [auditSearch, setAuditSearch] = useState('');
@@ -117,25 +159,25 @@ const AdminDashboard = () => {
     { quarter: 'Q4', activity: 0 }
   ];
 
-  const COLORS = ['#10b981', '#3b82f6', '#f59e0b'];
+  const COLORS = ['#10b981', '#0d9488', '#f59e0b'];
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       {/* Top Navigation */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 flex flex-wrap gap-2">
-        <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'overview' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-soft border border-slate-200 dark:border-slate-800 p-2 flex flex-wrap gap-2">
+        <button onClick={() => changeTab('overview')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'overview' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
           <LayoutDashboard size={16} className="mr-2" /> Org Overview
         </button>
-        <button onClick={() => setActiveTab('sheets')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'sheets' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => changeTab('sheets')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'sheets' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
           <Activity size={16} className="mr-2" /> Goal Sheets
         </button>
-        <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'users' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => changeTab('users')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'users' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
           <Users size={16} className="mr-2" /> User Management
         </button>
-        <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'audit' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => changeTab('audit')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'audit' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
           <Shield size={16} className="mr-2" /> Security & Audit
         </button>
-        <button onClick={() => setActiveTab('reporting')} className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${activeTab === 'reporting' ? 'bg-indigo-50 dark:bg-brand-900/40 text-indigo-700 dark:text-brand-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+        <button onClick={() => changeTab('reporting')} className={`px-4 py-2 text-sm font-semibold rounded-xl flex items-center transition-all ${activeTab === 'reporting' ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
           <Download size={16} className="mr-2" /> Export Reports
         </button>
       </div>
@@ -160,19 +202,19 @@ const AdminDashboard = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-4">
-              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg"><Users size={24} /></div>
+              <div className="p-3 bg-brand-50 text-brand-650 rounded-lg"><Users size={24} /></div>
               <div><p className="text-sm text-gray-500 font-medium">Total Users</p><h3 className="text-2xl font-bold text-gray-800">{stats?.usersCount || 0}</h3></div>
             </div>
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><Database size={24} /></div>
+              <div className="p-3 bg-teal-50 text-teal-650 rounded-lg"><Database size={24} /></div>
               <div><p className="text-sm text-gray-500 font-medium">Goal Sheets Active</p><h3 className="text-2xl font-bold text-gray-800">{stats?.sheetsCount || 0}</h3></div>
             </div>
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-4">
-              <div className="p-3 bg-green-100 text-green-600 rounded-lg"><CheckCircle size={24} /></div>
+              <div className="p-3 bg-emerald-50 text-emerald-650 rounded-lg"><CheckCircle size={24} /></div>
               <div><p className="text-sm text-gray-500 font-medium">Sheets Approved</p><h3 className="text-2xl font-bold text-gray-800">{stats?.approvedCount || 0}</h3></div>
             </div>
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-4">
-              <div className="p-3 bg-purple-100 text-purple-600 rounded-lg"><Activity size={24} /></div>
+              <div className="p-3 bg-purple-50 text-purple-650 rounded-lg"><Activity size={24} /></div>
               <div><p className="text-sm text-gray-500 font-medium">Avg Org Progress</p><h3 className="text-2xl font-bold text-gray-800">{stats?.avgCompletion || 0}%</h3></div>
             </div>
           </div>
@@ -187,7 +229,7 @@ const AdminDashboard = () => {
                     <XAxis type="number" domain={[0, 100]} hide />
                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} fontSize={12} width={80} />
                     <RechartsTooltip cursor={{fill: '#f9fafb'}} contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb'}} />
-                    <Bar dataKey="completed" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={24} />
+                    <Bar dataKey="completed" fill="#0d9488" radius={[0, 4, 4, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -208,7 +250,7 @@ const AdminDashboard = () => {
               </div>
               <div className="flex justify-center space-x-6 mt-4">
                 <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>Completed</div>
-                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>On Track</div>
+                <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-brand-500 rounded-full mr-2"></div>On Track</div>
                 <div className="flex items-center text-sm text-gray-600"><div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div>Not Started</div>
               </div>
             </div>
@@ -223,7 +265,7 @@ const AdminDashboard = () => {
                   <XAxis dataKey="quarter" axisLine={false} tickLine={false} />
                   <YAxis axisLine={false} tickLine={false} />
                   <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                  <Line type="monotone" dataKey="activity" stroke="#6366f1" strokeWidth={3} dot={{r: 4, fill: '#6366f1', strokeWidth: 0}} activeDot={{r: 6}} />
+                  <Line type="monotone" dataKey="activity" stroke="#0d9488" strokeWidth={3} dot={{r: 4, fill: '#0d9488', strokeWidth: 0}} activeDot={{r: 6}} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -239,7 +281,7 @@ const AdminDashboard = () => {
               <h3 className="text-lg font-bold text-gray-900">Organization Goal Sheets</h3>
               <p className="text-sm text-gray-500 mt-1">Monitor all employee goals and forcibly unlock sheets if changes are required.</p>
             </div>
-            <button onClick={fetchSheets} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"><RefreshCcw size={18} /></button>
+            <button onClick={fetchSheets} className="p-2 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition"><RefreshCcw size={18} /></button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -263,16 +305,16 @@ const AdminDashboard = () => {
                       <td className="px-6 py-4 text-gray-600">{sheet.year}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full tracking-wider ${
-                          sheet.status === 'approved' ? 'bg-green-100 text-green-700' :
-                          sheet.status === 'submitted' ? 'bg-blue-100 text-blue-700' :
-                          sheet.status === 'returned' ? 'bg-yellow-100 text-yellow-800' :
+                          sheet.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                          sheet.status === 'submitted' ? 'bg-brand-100 text-brand-700 border border-brand-200' :
+                          sheet.status === 'returned' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
                           'bg-gray-100 text-gray-600'
                         }`}>{sheet.status}</span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${progress}%` }}></div>
+                            <div className="h-full bg-brand-600 rounded-full" style={{ width: `${progress}%` }}></div>
                           </div>
                           <span className="text-xs font-bold text-gray-700">{progress}%</span>
                         </div>
@@ -304,7 +346,7 @@ const AdminDashboard = () => {
               <h3 className="text-lg font-bold text-gray-900">User Management</h3>
               <p className="text-sm text-gray-500 mt-1">Manage employee access, roles, and reporting hierarchies.</p>
             </div>
-            <button className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition">
+            <button className="flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg shadow-sm transition">
               <Plus size={16} className="mr-2" /> New User
             </button>
           </div>
@@ -328,14 +370,14 @@ const AdminDashboard = () => {
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider ${
                         user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                        user.role === 'manager' ? 'bg-blue-100 text-blue-700' :
+                        user.role === 'manager' ? 'bg-brand-100 text-brand-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>{user.role}</span>
                     </td>
                     <td className="px-6 py-4 text-gray-600">{user.department || 'N/A'}</td>
                     <td className="px-6 py-4 text-gray-600">{user.managerId?.name || '-'}</td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"><Edit2 size={16} /></button>
+                      <button className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition"><Edit2 size={16} /></button>
                       <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"><Trash2 size={16} /></button>
                     </td>
                   </tr>
@@ -355,14 +397,14 @@ const AdminDashboard = () => {
               <p className="text-sm text-gray-500 mt-1">Immutable ledger of all critical system events and state changes.</p>
             </div>
             <div className="flex flex-wrap gap-3 w-full md:w-auto">
-              <select value={auditModel} onChange={e => setAuditModel(e.target.value)} className="text-sm border-gray-300 rounded-lg p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
+              <select value={auditModel} onChange={e => setAuditModel(e.target.value)} className="text-sm border-gray-300 rounded-lg p-2 border focus:ring-2 focus:ring-brand-500 outline-none">
                 <option value="All">All Models</option>
                 <option value="GoalSheet">Goal Sheets</option>
                 <option value="Goal">Goals</option>
                 <option value="CheckIn">Check-Ins</option>
                 <option value="User">Users</option>
               </select>
-              <select value={auditAction} onChange={e => setAuditAction(e.target.value)} className="text-sm border-gray-300 rounded-lg p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
+              <select value={auditAction} onChange={e => setAuditAction(e.target.value)} className="text-sm border-gray-300 rounded-lg p-2 border focus:ring-2 focus:ring-brand-500 outline-none">
                 <option value="All">All Actions</option>
                 <option value="CREATE">Creates</option>
                 <option value="UPDATE">Updates</option>
@@ -377,7 +419,7 @@ const AdminDashboard = () => {
                   value={auditSearch}
                   onChange={e => setAuditSearch(e.target.value)}
                   placeholder="Search logs..." 
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none" 
                 />
               </div>
             </div>
@@ -409,7 +451,7 @@ const AdminDashboard = () => {
                       </td>
                       <td className="px-6 py-4 text-gray-600 font-medium">{log.model}</td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                        <button className="text-xs text-brand-600 hover:text-brand-850 font-medium">
                           {expandedLogId === log._id ? 'Hide' : 'View'}
                         </button>
                       </td>

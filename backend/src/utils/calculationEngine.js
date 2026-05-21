@@ -26,7 +26,8 @@ const calculateProgress = (goal, actualValue, status) => {
     case 'Percentage':
       if (goal.direction === 'Lower') {
         // Lower is better (e.g. Reduce costs to 50k. Actual is 60k. 50/60 * 100 = 83%)
-        if (actual <= 0 && target <= 0) score = 100; // Edge case for negative/0
+        if (actual === 0) score = 100;
+        else if (actual <= 0 && target <= 0) score = 100;
         else score = (target / actual) * 100;
       } else {
         // Higher is better (e.g. Sales to 100k. Actual is 50k. 50/100 * 100 = 50%)

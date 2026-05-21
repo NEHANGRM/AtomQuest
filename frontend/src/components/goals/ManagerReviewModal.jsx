@@ -21,9 +21,15 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
   };
 
   const handleReviewAction = async (status) => {
-    if (isEditing && status === 'approved' && totalWeightage !== 100) {
-      toast.error('Total weightage must be exactly 100% before approving.');
-      return;
+    if (isEditing && status === 'approved') {
+      if (totalWeightage !== 100) {
+        toast.error('Total weightage must be exactly 100% before approving.');
+        return;
+      }
+      if (goals.some(g => (Number(g.weightage) || 0) < 10)) {
+        toast.error('Each goal must have a weightage of at least 10% before approving.');
+        return;
+      }
     }
     if (status === 'returned' && !comments) {
       toast.error('Please provide comments when returning for rework.');
@@ -57,7 +63,7 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
         >
           <div className="flex justify-between items-center p-6 border-b border-gray-100">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Review Goal Sheet: <span className="text-blue-600">{sheet.user?.name}</span></h2>
+              <h2 className="text-xl font-bold text-gray-900">Review Goal Sheet: <span className="text-brand-600">{sheet.user?.name}</span></h2>
               <p className="text-sm text-gray-500 mt-1">Performance Year: {sheet.year} • Current Status: <span className="uppercase font-semibold text-gray-700">{sheet.status}</span></p>
             </div>
             <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition"><X size={20} /></button>
@@ -72,7 +78,7 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
                 </div>
                 <button 
                   onClick={() => setIsEditing(!isEditing)} 
-                  className="flex items-center text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded hover:bg-blue-100 transition shadow-sm"
+                  className="flex items-center text-sm font-medium text-brand-600 bg-brand-50 px-3 py-1.5 rounded hover:bg-brand-100 transition shadow-sm"
                 >
                   <Edit2 size={16} className="mr-1.5" /> {isEditing ? 'Cancel Edits' : 'Inline Edit'}
                 </button>
@@ -81,16 +87,16 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
 
             <div className="space-y-4">
               {goals.map((goal, idx) => (
-                <div key={goal._id || idx} className={`bg-white p-5 rounded-xl border transition-all shadow-sm flex flex-col md:flex-row gap-5 ${isEditing ? 'border-blue-300 ring-2 ring-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                <div key={goal._id || idx} className={`bg-white p-5 rounded-xl border transition-all shadow-sm flex flex-col md:flex-row gap-5 ${isEditing ? 'border-brand-300 ring-2 ring-brand-50' : 'border-gray-200 hover:border-gray-300'}`}>
                   <div className="flex-1">
                     {isEditing ? (
-                      <input className="w-full font-semibold text-gray-900 border-b border-dashed border-gray-400 focus:border-blue-500 bg-blue-50/30 p-1 outline-none mb-2" value={goal.title} onChange={(e) => handleGoalChange(idx, 'title', e.target.value)} />
+                      <input className="w-full font-semibold text-gray-900 border-b border-dashed border-gray-400 focus:border-brand-500 bg-brand-50/30 p-1 outline-none mb-2" value={goal.title} onChange={(e) => handleGoalChange(idx, 'title', e.target.value)} />
                     ) : (
                       <h4 className="font-semibold text-gray-900 mb-2">{goal.title}</h4>
                     )}
                     
                     {isEditing ? (
-                       <textarea className="w-full text-sm text-gray-700 border border-dashed border-gray-400 focus:border-blue-500 bg-blue-50/30 p-2 rounded outline-none" value={goal.description || ''} onChange={(e) => handleGoalChange(idx, 'description', e.target.value)} rows="2" />
+                       <textarea className="w-full text-sm text-gray-700 border border-dashed border-gray-400 focus:border-brand-500 bg-brand-50/30 p-2 rounded outline-none" value={goal.description || ''} onChange={(e) => handleGoalChange(idx, 'description', e.target.value)} rows="2" />
                     ) : (
                       <p className="text-sm text-gray-600">{goal.description || 'No description provided.'}</p>
                     )}
@@ -105,7 +111,7 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
                     <div>
                       <p className="text-xs text-gray-500 mb-1.5 uppercase font-semibold tracking-wider">Target</p>
                       {isEditing ? (
-                        <input type="number" className="w-full border-2 border-blue-200 rounded-md p-1.5 text-sm outline-none focus:border-blue-500 font-bold text-gray-800" value={goal.target} onChange={(e) => handleGoalChange(idx, 'target', e.target.value)} />
+                        <input type="number" className="w-full border-2 border-brand-200 rounded-md p-1.5 text-sm outline-none focus:border-brand-500 font-bold text-gray-800" value={goal.target} onChange={(e) => handleGoalChange(idx, 'target', e.target.value)} />
                       ) : (
                         <p className="font-bold text-gray-800 text-lg">{goal.target}</p>
                       )}
@@ -113,9 +119,9 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
                     <div>
                       <p className="text-xs text-gray-500 mb-1.5 uppercase font-semibold tracking-wider">Weightage (%)</p>
                       {isEditing ? (
-                        <input type="number" className="w-full border-2 border-blue-200 rounded-md p-1.5 text-sm outline-none focus:border-blue-500 font-bold text-gray-800" value={goal.weightage} onChange={(e) => handleGoalChange(idx, 'weightage', e.target.value)} />
+                        <input type="number" className="w-full border-2 border-brand-200 rounded-md p-1.5 text-sm outline-none focus:border-brand-500 font-bold text-gray-800" value={goal.weightage} onChange={(e) => handleGoalChange(idx, 'weightage', e.target.value)} />
                       ) : (
-                        <p className="font-bold text-blue-600 text-lg">{goal.weightage}%</p>
+                        <p className="font-bold text-brand-600 text-lg">{goal.weightage}%</p>
                       )}
                     </div>
                   </div>
@@ -127,7 +133,7 @@ const ManagerReviewModal = ({ sheet, onClose, onComplete }) => {
               <label className="block text-sm font-semibold text-gray-800 mb-2">Manager Feedback</label>
               <textarea 
                 rows="3" 
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-shadow"
                 placeholder="Add constructive feedback, required if returning for rework..."
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}

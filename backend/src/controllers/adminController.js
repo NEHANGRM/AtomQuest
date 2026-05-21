@@ -2,6 +2,7 @@ const User = require('../models/User');
 const GoalSheet = require('../models/GoalSheet');
 const AuditLog = require('../models/AuditLog');
 const Goal = require('../models/Goal');
+const { triggerNotification } = require('../utils/notifications');
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -84,6 +85,27 @@ const unlockGoalSheet = async (req, res) => {
       previousValue: { status: previousStatus },
       newValue: { status: 'returned' }
     });
+
+    // Notify employee
+    await triggerNotification(
+      sheet.user,
+      'Goal Sheet Unlocked',
+      `Your goal sheet was unlocked by an administrator for editing.`,
+      'warning',
+      { entityModel: 'GoalSheet', entityId: sheet._id }
+    );
+
+    // Notify employee's manager
+    const employeeUser = await User.findById(sheet.user);
+    if (employeeUser && employeeUser.managerId) {
+      await triggerNotification(
+        employeeUser.managerId,
+        'Goal Sheet Unlocked by Admin',
+        `Admin unlocked the goal sheet of ${employeeUser.name}.`,
+        'info',
+        { entityModel: 'GoalSheet', entityId: sheet._id }
+      );
+    }
 
     res.json({ message: 'Sheet unlocked successfully', sheet });
   } catch (error) {

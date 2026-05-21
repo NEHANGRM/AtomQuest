@@ -32,6 +32,40 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
     }
   }, [activeTab, goal._id]);
 
+  const getLiveProgressScore = () => {
+    if (actualValue === '') return 0;
+    const target = Number(goal.target);
+    const actual = Number(actualValue);
+    let score = 0;
+
+    switch (goal.uomType) {
+      case 'Numeric':
+      case 'Percentage':
+        if (goal.direction === 'Lower') {
+          if (actual === 0) score = 100;
+          else if (actual <= 0 && target <= 0) score = 100;
+          else score = (target / actual) * 100;
+        } else {
+          if (target === 0) score = actual > 0 ? 100 : 0;
+          else score = (actual / target) * 100;
+        }
+        break;
+      case 'Zero-based':
+        score = actual === 0 ? 100 : 0;
+        break;
+      case 'Timeline':
+        if (status === 'Completed') score = 100;
+        else if (status === 'On Track') score = 50;
+        else score = 0;
+        break;
+      default:
+        score = 0;
+    }
+    if (score > 100) return 100;
+    if (score < 0 || isNaN(score)) return 0;
+    return Math.round(score);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!comments) {
@@ -39,13 +73,20 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
       return;
     }
 
+    let finalActualValue = actualValue;
+    let finalStatus = status;
+    if (actualValue === '' || actualValue === null || actualValue === undefined) {
+      finalActualValue = 0;
+      finalStatus = 'Not Started';
+    }
+
     try {
       setIsSubmitting(true);
       await api.post('/api/checkins', {
         goalId: goal._id,
         quarter,
-        actualValue: Number(actualValue),
-        status,
+        actualValue: Number(finalActualValue),
+        status: finalStatus,
         comments
       });
       toast.success(`${quarter} update saved successfully!`);
@@ -67,11 +108,11 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
           className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white flex justify-between items-start">
+          <div className="bg-gradient-to-r from-brand-600 to-brand-800 p-6 text-white flex justify-between items-start">
             <div>
-              <span className="bg-blue-800/50 text-blue-100 text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide mb-3 inline-block">Update Progress</span>
+              <span className="bg-brand-800/50 text-brand-100 text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide mb-3 inline-block">Update Progress</span>
               <h2 className="text-xl font-bold leading-tight">{goal.title}</h2>
-              <div className="flex items-center space-x-4 mt-3 text-sm text-blue-100">
+              <div className="flex items-center space-x-4 mt-3 text-sm text-brand-100">
                 <span className="flex items-center"><Target size={14} className="mr-1.5"/> Target: {goal.target} {goal.uomType}</span>
                 <span className="flex items-center"><TrendingUp size={14} className="mr-1.5"/> Weightage: {goal.weightage}%</span>
               </div>
@@ -83,13 +124,13 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
           <div className="flex border-b border-gray-200 bg-gray-50/50">
             <button 
               onClick={() => setActiveTab('update')} 
-              className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center transition-colors ${activeTab === 'update' ? 'text-blue-600 border-b-2 border-blue-600 bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+              className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center transition-colors ${activeTab === 'update' ? 'text-brand-600 border-b-2 border-brand-600 bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
             >
               <Save size={16} className="mr-2" /> Log Update
             </button>
             <button 
               onClick={() => setActiveTab('history')} 
-              className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center transition-colors ${activeTab === 'history' ? 'text-blue-600 border-b-2 border-blue-600 bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+              className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center transition-colors ${activeTab === 'history' ? 'text-brand-600 border-b-2 border-brand-600 bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
             >
               <History size={16} className="mr-2" /> Timeline History
             </button>
@@ -102,7 +143,7 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Quarter Window</label>
-                    <select value={quarter} onChange={e => setQuarter(e.target.value)} className="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-2 focus:ring-blue-500 outline-none shadow-sm bg-white">
+                    <select value={quarter} onChange={e => setQuarter(e.target.value)} className="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none shadow-sm bg-white">
                       <option value="Q1">Q1 (July - Sept)</option>
                       <option value="Q2">Q2 (Oct - Dec)</option>
                       <option value="Q3">Q3 (Jan - March)</option>
@@ -111,7 +152,7 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Status Indicator</label>
-                    <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-2 focus:ring-blue-500 outline-none shadow-sm bg-white">
+                    <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none shadow-sm bg-white">
                       <option value="Not Started">Not Started</option>
                       <option value="On Track">On Track</option>
                       <option value="Completed">Completed</option>
@@ -123,13 +164,15 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Actual Value Achieved ({goal.uomType})</label>
                   <input 
                     type="number" 
-                    required 
                     value={actualValue} 
                     onChange={e => setActualValue(e.target.value)} 
-                    className="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-2 focus:ring-blue-500 outline-none shadow-sm" 
+                    className="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none shadow-sm" 
                     placeholder={`Target is ${goal.target}...`}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Current Progress Score: {goal.progressScore}%</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5">
+                    Live Progress Score: <span className="font-bold text-brand-600 dark:text-brand-450">{getLiveProgressScore()}%</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">(For progress tracking only, not final performance rating)</span>
+                  </p>
                 </div>
 
                 <div>
@@ -138,14 +181,14 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
                     rows="3" 
                     value={comments} 
                     onChange={e => setComments(e.target.value)} 
-                    className="w-full border-gray-300 rounded-lg p-3 border focus:ring-2 focus:ring-blue-500 outline-none shadow-sm resize-none"
+                    className="w-full border-gray-300 rounded-lg p-3 border focus:ring-2 focus:ring-brand-500 outline-none shadow-sm resize-none"
                     placeholder="Provide context for this achievement..."
                   />
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex justify-end space-x-3">
                   <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel</button>
-                  <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-md disabled:opacity-50 flex items-center">
+                  <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition shadow-md disabled:opacity-50 flex items-center">
                     <Save size={16} className="mr-2"/> {isSubmitting ? 'Saving...' : 'Submit Update'}
                   </button>
                 </div>
@@ -159,13 +202,13 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
                     <p className="text-sm text-gray-500">Log a progress update to see your timeline here.</p>
                   </div>
                 ) : (
-                  <div className="relative border-l-2 border-blue-100 ml-4 space-y-8 py-2">
+                  <div className="relative border-l-2 border-brand-100 ml-4 space-y-8 py-2">
                     {history.map((log, i) => (
                       <div key={log._id} className="relative pl-6">
-                        <div className="absolute w-4 h-4 bg-blue-500 rounded-full border-4 border-white -left-[9px] top-1 shadow-sm"></div>
+                        <div className="absolute w-4 h-4 bg-brand-500 rounded-full border-4 border-white -left-[9px] top-1 shadow-sm"></div>
                         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition">
                           <div className="flex justify-between items-start mb-2">
-                            <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">{log.quarter} Update</span>
+                            <span className="bg-brand-50 text-brand-700 text-xs font-bold px-2.5 py-1 rounded-full">{log.quarter} Update</span>
                             <span className="text-xs text-gray-400 font-medium">{new Date(log.createdAt).toLocaleDateString()}</span>
                           </div>
                           <div className="grid grid-cols-2 gap-4 my-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
@@ -177,7 +220,7 @@ const QuarterlyUpdateModal = ({ goal, onClose, onComplete }) => {
                               <p className="text-xs text-gray-500 mb-1">Status Logged</p>
                               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                                 log.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                                log.status === 'On Track' ? 'bg-blue-100 text-blue-700' :
+                                log.status === 'On Track' ? 'bg-brand-100 text-brand-700' :
                                 'bg-gray-100 text-gray-700'
                               }`}>{log.status}</span>
                             </div>
