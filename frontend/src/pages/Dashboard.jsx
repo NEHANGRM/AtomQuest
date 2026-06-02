@@ -118,7 +118,12 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  const navItems = NAV_CONFIG[user?.role] || NAV_CONFIG.employee;
+  const navItems = (NAV_CONFIG[user?.role] || NAV_CONFIG.employee).filter(item => {
+    if (user?.role === 'manager' && item.key === 'goals' && !user?.managerId) {
+      return false;
+    }
+    return true;
+  });
 
   const renderContent = () => {
     if (activeNav === 'goals') return <GoalsPage />;

@@ -16,6 +16,7 @@ const registerUser = async (req, res) => {
     if (user) {
       res.status(201).json({
         _id: user._id, name: user.name, email: user.email, role: user.role,
+        managerId: user.managerId,
         token: generateToken(user._id)
       });
     } else {
@@ -33,6 +34,7 @@ const loginUser = async (req, res) => {
     if (user && (await user.matchPassword(password))) {
       res.json({
         _id: user._id, name: user.name, email: user.email, role: user.role,
+        managerId: user.managerId,
         token: generateToken(user._id)
       });
     } else {
@@ -91,6 +93,7 @@ const updateUserProfile = async (req, res) => {
         name: updatedUser.name,
         email: updatedUser.email,
         role: updatedUser.role,
+        managerId: updatedUser.managerId,
         token: generateToken(updatedUser._id)
       });
     } else {
